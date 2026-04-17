@@ -48,7 +48,11 @@ public class AuthService {
         return clienteRepository.save(cliente);
     }
 
-    public String generateToken(org.springframework.security.core.userdetails.UserDetails userDetails, String role) {
+    public String generateToken(org.springframework.security.core.userdetails.UserDetails userDetails) {
+        String role = userDetails.getAuthorities().stream()
+                .findFirst()
+                .map(org.springframework.security.core.GrantedAuthority::getAuthority)
+                .orElse("");
         return jwtService.generateToken(Map.of("role", role), userDetails);
     }
 

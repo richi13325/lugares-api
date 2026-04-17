@@ -37,7 +37,7 @@ class AuthControllerTest extends BaseControllerTest {
         cliente.setCorreoElectronico("test@test.com");
 
         when(authService.loginCliente("test@test.com", "password123")).thenReturn(cliente);
-        when(authService.generateToken(cliente, "ROLE_CLIENTE")).thenReturn("jwt-token");
+        when(authService.generateToken(cliente)).thenReturn("jwt-token");
         when(authService.getExpirationTime()).thenReturn(3600000L);
 
         AuthRequest request = new AuthRequest();
@@ -129,7 +129,7 @@ class AuthControllerTest extends BaseControllerTest {
         usuario.setCorreoElectronico("admin@test.com");
 
         when(authService.loginUsuario("admin@test.com", "adminpass")).thenReturn(usuario);
-        when(authService.generateToken(usuario, "ROLE_USUARIO")).thenReturn("jwt-usuario-token");
+        when(authService.generateToken(usuario)).thenReturn("jwt-usuario-token");
         when(authService.getExpirationTime()).thenReturn(3600000L);
 
         AuthRequest request = new AuthRequest();

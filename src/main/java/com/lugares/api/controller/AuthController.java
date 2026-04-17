@@ -8,6 +8,8 @@ import com.lugares.api.dto.response.LoginResponse;
 import com.lugares.api.entity.Cliente;
 import com.lugares.api.entity.Usuario;
 import com.lugares.api.service.AuthService;
+import io.swagger.v3.oas.annotations.security.SecurityRequirements;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
@@ -21,6 +23,8 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/auth")
 @RequiredArgsConstructor
+@SecurityRequirements
+@Tag(name = "Autenticación", description = "Endpoints públicos — no requieren token")
 public class AuthController {
 
     private final AuthService authService;
@@ -29,7 +33,7 @@ public class AuthController {
     @PostMapping("/cliente/login")
     public ResponseEntity<ApiResponse<LoginResponse>> loginCliente(@Valid @RequestBody AuthRequest request) {
         Cliente cliente = authService.loginCliente(request.getCorreoElectronico(), request.getContrasenia());
-        String token = authService.generateToken(cliente, "ROLE_CLIENTE");
+        String token = authService.generateToken(cliente);
         LoginResponse response = new LoginResponse(token, authService.getExpirationTime());
         return ResponseEntity.ok(ApiResponse.success(response));
     }
@@ -37,7 +41,7 @@ public class AuthController {
     @PostMapping("/usuario/login")
     public ResponseEntity<ApiResponse<LoginResponse>> loginUsuario(@Valid @RequestBody AuthRequest request) {
         Usuario usuario = authService.loginUsuario(request.getCorreoElectronico(), request.getContrasenia());
-        String token = authService.generateToken(usuario, "ROLE_USUARIO");
+        String token = authService.generateToken(usuario);
         LoginResponse response = new LoginResponse(token, authService.getExpirationTime());
         return ResponseEntity.ok(ApiResponse.success(response));
     }

@@ -31,11 +31,14 @@ public class CapsulaCulturalService {
 
     @Transactional
     public CapsulaCultural update(Integer id, CapsulaCultural datosActualizados) {
-        if (!capsulaCulturalRepository.existsById(id)) {
-            throw new ResourceNotFoundException("CapsulaCultural", "id", id);
-        }
-        datosActualizados.setId(id);
-        return capsulaCulturalRepository.save(datosActualizados);
+        CapsulaCultural existing = capsulaCulturalRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("CapsulaCultural", "id", id));
+        existing.setTitulo(datosActualizados.getTitulo());
+        existing.setDescripcion(datosActualizados.getDescripcion());
+        existing.setImagen(datosActualizados.getImagen());
+        existing.setFechaPublicacion(datosActualizados.getFechaPublicacion());
+        existing.setEsVisible(datosActualizados.getEsVisible());
+        return capsulaCulturalRepository.save(existing);
     }
 
     @Transactional

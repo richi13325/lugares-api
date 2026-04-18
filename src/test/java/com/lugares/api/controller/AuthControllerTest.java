@@ -6,15 +6,15 @@ import com.lugares.api.dto.response.ClienteResponse;
 import com.lugares.api.entity.Cliente;
 import com.lugares.api.entity.Usuario;
 import com.lugares.api.exception.DuplicateResourceException;
+import com.lugares.api.mapper.ClienteMapper;
 import com.lugares.api.service.AuthService;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -23,8 +23,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(AuthController.class)
 class AuthControllerTest extends BaseControllerTest {
 
-    @MockBean
+    @MockitoBean
     private AuthService authService;
+
+    @MockitoBean
+    private ClienteMapper clienteMapper;
 
     // ================================================================== //
     //  POST /auth/cliente/login                                           //
@@ -179,9 +182,9 @@ class AuthControllerTest extends BaseControllerTest {
         clienteResponse.setCorreoElectronico("nuevo@test.com");
         clienteResponse.setNombre("Nuevo Cliente");
 
-        when(modelMapper.map(any(), eq(Cliente.class))).thenReturn(savedCliente);
+        when(clienteMapper.toEntity(any(ClienteRequest.class))).thenReturn(savedCliente);
         when(authService.registerCliente(savedCliente)).thenReturn(savedCliente);
-        when(modelMapper.map(savedCliente, ClienteResponse.class)).thenReturn(clienteResponse);
+        when(clienteMapper.toDto(savedCliente)).thenReturn(clienteResponse);
 
         ClienteRequest request = new ClienteRequest();
         request.setNombre("Nuevo Cliente");
@@ -222,7 +225,7 @@ class AuthControllerTest extends BaseControllerTest {
         // given
         Cliente entity = new Cliente();
 
-        when(modelMapper.map(any(), eq(Cliente.class))).thenReturn(entity);
+        when(clienteMapper.toEntity(any(ClienteRequest.class))).thenReturn(entity);
         when(authService.registerCliente(any()))
                 .thenThrow(new DuplicateResourceException("Cliente", "correoElectronico", "dup@test.com"));
 

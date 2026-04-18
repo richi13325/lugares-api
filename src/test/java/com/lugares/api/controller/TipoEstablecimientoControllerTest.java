@@ -3,10 +3,11 @@ package com.lugares.api.controller;
 import com.lugares.api.dto.response.TipoEstablecimientoResponse;
 import com.lugares.api.entity.TipoEstablecimiento;
 import com.lugares.api.exception.ResourceNotFoundException;
+import com.lugares.api.mapper.TipoEstablecimientoMapper;
 import com.lugares.api.service.TipoEstablecimientoService;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.http.MediaType;
 
 import java.util.List;
@@ -25,8 +26,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(TipoEstablecimientoController.class)
 class TipoEstablecimientoControllerTest extends BaseControllerTest {
 
-    @MockBean
+    @MockitoBean
     private TipoEstablecimientoService tipoEstablecimientoService;
+
+    @MockitoBean
+    private TipoEstablecimientoMapper tipoEstablecimientoMapper;
 
     // ================================================================== //
     //  GET /api/tipos-establecimiento                                     //
@@ -45,7 +49,7 @@ class TipoEstablecimientoControllerTest extends BaseControllerTest {
         response.setNombre("Restaurante");
 
         when(tipoEstablecimientoService.listAll()).thenReturn(List.of(entity1, entity2));
-        when(modelMapper.map(any(), eq(TipoEstablecimientoResponse.class))).thenReturn(response);
+        when(tipoEstablecimientoMapper.toDto(any())).thenReturn(response);
 
         // when & then
         mockMvc.perform(get("/api/tipos-establecimiento").with(asUsuario()))
@@ -76,7 +80,7 @@ class TipoEstablecimientoControllerTest extends BaseControllerTest {
         response.setNombre("Restaurante");
 
         when(tipoEstablecimientoService.getById(1)).thenReturn(entity);
-        when(modelMapper.map(entity, TipoEstablecimientoResponse.class)).thenReturn(response);
+        when(tipoEstablecimientoMapper.toDto(entity)).thenReturn(response);
 
         // when & then
         mockMvc.perform(get("/api/tipos-establecimiento/1").with(asUsuario()))
@@ -112,7 +116,7 @@ class TipoEstablecimientoControllerTest extends BaseControllerTest {
         response.setNombre("Nuevo");
 
         when(tipoEstablecimientoService.create(any())).thenReturn(savedEntity);
-        when(modelMapper.map(savedEntity, TipoEstablecimientoResponse.class)).thenReturn(response);
+        when(tipoEstablecimientoMapper.toDto(savedEntity)).thenReturn(response);
 
         // when & then
         mockMvc.perform(post("/api/tipos-establecimiento")
@@ -138,7 +142,7 @@ class TipoEstablecimientoControllerTest extends BaseControllerTest {
         response.setId(1);
 
         when(tipoEstablecimientoService.update(eq(1), any())).thenReturn(updated);
-        when(modelMapper.map(updated, TipoEstablecimientoResponse.class)).thenReturn(response);
+        when(tipoEstablecimientoMapper.toDto(updated)).thenReturn(response);
 
         // when & then
         mockMvc.perform(put("/api/tipos-establecimiento/1")

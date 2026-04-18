@@ -3,9 +3,9 @@ package com.lugares.api.controller;
 import com.lugares.api.common.ApiResponse;
 import com.lugares.api.dto.response.CapsulaCulturalResponse;
 import com.lugares.api.entity.CapsulaCultural;
+import com.lugares.api.mapper.CapsulaCulturalMapper;
 import com.lugares.api.service.CapsulaCulturalService;
 import lombok.RequiredArgsConstructor;
-import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -25,34 +25,32 @@ import java.util.List;
 public class CapsulaCulturalController {
 
     private final CapsulaCulturalService capsulaCulturalService;
-    private final ModelMapper modelMapper;
+    private final CapsulaCulturalMapper capsulaCulturalMapper;
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<CapsulaCulturalResponse>>> listAll() {
         List<CapsulaCulturalResponse> response = capsulaCulturalService.listAll().stream()
-                .map(c -> modelMapper.map(c, CapsulaCulturalResponse.class))
+                .map(capsulaCulturalMapper::toDto)
                 .toList();
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<CapsulaCulturalResponse>> getById(@PathVariable Integer id) {
-        CapsulaCulturalResponse response = modelMapper.map(capsulaCulturalService.getById(id), CapsulaCulturalResponse.class);
+        CapsulaCulturalResponse response = capsulaCulturalMapper.toDto(capsulaCulturalService.getById(id));
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
     @PostMapping
     public ResponseEntity<ApiResponse<CapsulaCulturalResponse>> create(@RequestBody CapsulaCultural capsula) {
         CapsulaCultural saved = capsulaCulturalService.create(capsula);
-        CapsulaCulturalResponse response = modelMapper.map(saved, CapsulaCulturalResponse.class);
-        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.created(response));
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.created(capsulaCulturalMapper.toDto(saved)));
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<CapsulaCulturalResponse>> update(@PathVariable Integer id, @RequestBody CapsulaCultural capsula) {
         CapsulaCultural updated = capsulaCulturalService.update(id, capsula);
-        CapsulaCulturalResponse response = modelMapper.map(updated, CapsulaCulturalResponse.class);
-        return ResponseEntity.ok(ApiResponse.success(response));
+        return ResponseEntity.ok(ApiResponse.success(capsulaCulturalMapper.toDto(updated)));
     }
 
     @DeleteMapping("/{id}")

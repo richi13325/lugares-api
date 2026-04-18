@@ -3,15 +3,15 @@ package com.lugares.api.controller;
 import com.lugares.api.dto.response.SuscripcionResponse;
 import com.lugares.api.entity.Suscripcion;
 import com.lugares.api.exception.ResourceNotFoundException;
+import com.lugares.api.mapper.SuscripcionMapper;
 import com.lugares.api.service.SuscripcionService;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -20,8 +20,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(SuscripcionController.class)
 class SuscripcionControllerTest extends BaseControllerTest {
 
-    @MockBean
+    @MockitoBean
     private SuscripcionService suscripcionService;
+
+    @MockitoBean
+    private SuscripcionMapper suscripcionMapper;
 
     // ================================================================== //
     //  GET /api/suscripciones                                             //
@@ -40,7 +43,7 @@ class SuscripcionControllerTest extends BaseControllerTest {
         response.setNombre("Basic");
 
         when(suscripcionService.listAll()).thenReturn(List.of(entity1, entity2));
-        when(modelMapper.map(any(), eq(SuscripcionResponse.class))).thenReturn(response);
+        when(suscripcionMapper.toDto(any())).thenReturn(response);
 
         // when & then
         mockMvc.perform(get("/api/suscripciones").with(asUsuario()))
@@ -71,7 +74,7 @@ class SuscripcionControllerTest extends BaseControllerTest {
         response.setNombre("Premium");
 
         when(suscripcionService.getById(1)).thenReturn(entity);
-        when(modelMapper.map(entity, SuscripcionResponse.class)).thenReturn(response);
+        when(suscripcionMapper.toDto(entity)).thenReturn(response);
 
         // when & then
         mockMvc.perform(get("/api/suscripciones/1").with(asUsuario()))

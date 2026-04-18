@@ -3,10 +3,11 @@ package com.lugares.api.controller;
 import com.lugares.api.dto.response.EmpresaResponse;
 import com.lugares.api.entity.Empresa;
 import com.lugares.api.exception.ResourceNotFoundException;
+import com.lugares.api.mapper.EmpresaMapper;
 import com.lugares.api.service.EmpresaService;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.http.MediaType;
 
 import java.time.LocalDate;
@@ -26,8 +27,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(EmpresaController.class)
 class EmpresaControllerTest extends BaseControllerTest {
 
-    @MockBean
+    @MockitoBean
     private EmpresaService empresaService;
+
+    @MockitoBean
+    private EmpresaMapper empresaMapper;
 
     // ================================================================== //
     //  GET /api/empresas                                                  //
@@ -46,7 +50,7 @@ class EmpresaControllerTest extends BaseControllerTest {
         response.setNombre("Acme Corp");
 
         when(empresaService.listAll()).thenReturn(List.of(entity1, entity2));
-        when(modelMapper.map(any(), eq(EmpresaResponse.class))).thenReturn(response);
+        when(empresaMapper.toDto(any())).thenReturn(response);
 
         // when & then
         mockMvc.perform(get("/api/empresas").with(asUsuario()))
@@ -79,7 +83,7 @@ class EmpresaControllerTest extends BaseControllerTest {
         response.setEstado("Activo");
 
         when(empresaService.getById(1)).thenReturn(entity);
-        when(modelMapper.map(entity, EmpresaResponse.class)).thenReturn(response);
+        when(empresaMapper.toDto(entity)).thenReturn(response);
 
         // when & then
         mockMvc.perform(get("/api/empresas/1").with(asUsuario()))
@@ -117,7 +121,7 @@ class EmpresaControllerTest extends BaseControllerTest {
         response.setNombre("Nueva Empresa");
 
         when(empresaService.create(any())).thenReturn(savedEntity);
-        when(modelMapper.map(savedEntity, EmpresaResponse.class)).thenReturn(response);
+        when(empresaMapper.toDto(savedEntity)).thenReturn(response);
 
         // when & then
         mockMvc.perform(post("/api/empresas")
@@ -143,7 +147,7 @@ class EmpresaControllerTest extends BaseControllerTest {
         response.setId(1);
 
         when(empresaService.update(eq(1), any())).thenReturn(updated);
-        when(modelMapper.map(updated, EmpresaResponse.class)).thenReturn(response);
+        when(empresaMapper.toDto(updated)).thenReturn(response);
 
         // when & then
         mockMvc.perform(put("/api/empresas/1")

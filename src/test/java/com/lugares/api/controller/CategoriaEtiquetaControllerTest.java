@@ -3,10 +3,11 @@ package com.lugares.api.controller;
 import com.lugares.api.dto.response.CategoriaEtiquetaResponse;
 import com.lugares.api.entity.CategoriaEtiqueta;
 import com.lugares.api.exception.ResourceNotFoundException;
+import com.lugares.api.mapper.CategoriaEtiquetaMapper;
 import com.lugares.api.service.CategoriaEtiquetaService;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.http.MediaType;
 
 import java.util.List;
@@ -25,8 +26,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(CategoriaEtiquetaController.class)
 class CategoriaEtiquetaControllerTest extends BaseControllerTest {
 
-    @MockBean
+    @MockitoBean
     private CategoriaEtiquetaService categoriaEtiquetaService;
+
+    @MockitoBean
+    private CategoriaEtiquetaMapper categoriaEtiquetaMapper;
 
     // ================================================================== //
     //  GET /api/categorias-etiqueta                                       //
@@ -45,7 +49,7 @@ class CategoriaEtiquetaControllerTest extends BaseControllerTest {
         response.setNombre("Comida");
 
         when(categoriaEtiquetaService.listAll()).thenReturn(List.of(entity1, entity2));
-        when(modelMapper.map(any(), eq(CategoriaEtiquetaResponse.class))).thenReturn(response);
+        when(categoriaEtiquetaMapper.toDto(any())).thenReturn(response);
 
         // when & then
         mockMvc.perform(get("/api/categorias-etiqueta").with(asUsuario()))
@@ -76,7 +80,7 @@ class CategoriaEtiquetaControllerTest extends BaseControllerTest {
         response.setNombre("Comida");
 
         when(categoriaEtiquetaService.getById(1)).thenReturn(entity);
-        when(modelMapper.map(entity, CategoriaEtiquetaResponse.class)).thenReturn(response);
+        when(categoriaEtiquetaMapper.toDto(entity)).thenReturn(response);
 
         // when & then
         mockMvc.perform(get("/api/categorias-etiqueta/1").with(asUsuario()))
@@ -112,7 +116,7 @@ class CategoriaEtiquetaControllerTest extends BaseControllerTest {
         response.setNombre("Nueva");
 
         when(categoriaEtiquetaService.create(any())).thenReturn(savedEntity);
-        when(modelMapper.map(savedEntity, CategoriaEtiquetaResponse.class)).thenReturn(response);
+        when(categoriaEtiquetaMapper.toDto(savedEntity)).thenReturn(response);
 
         // when & then
         mockMvc.perform(post("/api/categorias-etiqueta")
@@ -138,7 +142,7 @@ class CategoriaEtiquetaControllerTest extends BaseControllerTest {
         response.setId(1);
 
         when(categoriaEtiquetaService.update(eq(1), any())).thenReturn(updated);
-        when(modelMapper.map(updated, CategoriaEtiquetaResponse.class)).thenReturn(response);
+        when(categoriaEtiquetaMapper.toDto(updated)).thenReturn(response);
 
         // when & then
         mockMvc.perform(put("/api/categorias-etiqueta/1")

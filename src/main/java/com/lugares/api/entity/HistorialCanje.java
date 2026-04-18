@@ -34,8 +34,8 @@ public class HistorialCanje {
     private Promocion promocion;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "fk_id_usuario", nullable = false)
-    private Usuario usuario;
+    @JoinColumn(name = "fk_id_cliente", nullable = false)
+    private Cliente cliente;
 
     @Column(name = "fld_fecha_hora", nullable = false)
     private LocalDateTime fechaHora;

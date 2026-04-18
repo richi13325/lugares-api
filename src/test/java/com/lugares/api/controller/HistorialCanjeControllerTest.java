@@ -4,10 +4,11 @@ import com.lugares.api.dto.response.HistorialCanjeResponse;
 import com.lugares.api.entity.HistorialCanje;
 import com.lugares.api.exception.BusinessRuleException;
 import com.lugares.api.exception.ResourceNotFoundException;
+import com.lugares.api.mapper.HistorialCanjeMapper;
 import com.lugares.api.service.HistorialCanjeService;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.util.List;
 
@@ -24,15 +25,18 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(HistorialCanjeController.class)
 class HistorialCanjeControllerTest extends BaseControllerTest {
 
-    @MockBean
+    @MockitoBean
     private HistorialCanjeService historialCanjeService;
 
+    @MockitoBean
+    private HistorialCanjeMapper historialCanjeMapper;
+
     // ================================================================== //
-    //  GET /api/historial-canjes/usuario/{usuarioId}                      //
+    //  GET /api/historial-canjes/cliente/{clienteId}                      //
     // ================================================================== //
 
     @Test
-    void listByUsuario_existingId_returnsOkWithList() throws Exception {
+    void listByCliente_existingId_returnsOkWithList() throws Exception {
         // given
         HistorialCanje canje = new HistorialCanje();
         canje.setId(1);
@@ -40,30 +44,52 @@ class HistorialCanjeControllerTest extends BaseControllerTest {
         HistorialCanjeResponse response = new HistorialCanjeResponse();
         response.setId(1);
 
-        when(historialCanjeService.listByUsuario(5)).thenReturn(List.of(canje));
-        when(modelMapper.map(any(), eq(HistorialCanjeResponse.class))).thenReturn(response);
+        when(historialCanjeService.listByCliente(5)).thenReturn(List.of(canje));
+        when(historialCanjeMapper.toDto(any())).thenReturn(response);
 
         // when & then
-        mockMvc.perform(get("/api/historial-canjes/usuario/5").with(asUsuario()))
+        mockMvc.perform(get("/api/historial-canjes/cliente/5").with(asUsuario()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data").isArray());
     }
 
     @Test
-    void listByUsuario_nonExistentId_returnsNotFound() throws Exception {
+    void listByCliente_nonExistentId_returnsNotFound() throws Exception {
         // given
-        when(historialCanjeService.listByUsuario(999))
-                .thenThrow(new ResourceNotFoundException("Usuario", "id", 999));
+        when(historialCanjeService.listByCliente(999))
+                .thenThrow(new ResourceNotFoundException("Cliente", "id", 999));
 
         // when & then
-        mockMvc.perform(get("/api/historial-canjes/usuario/999").with(asUsuario()))
+        mockMvc.perform(get("/api/historial-canjes/cliente/999").with(asUsuario()))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.error").value("Not Found"));
     }
 
     @Test
-    void listByUsuario_unauthenticated_returnsForbidden() throws Exception {
-        mockMvc.perform(get("/api/historial-canjes/usuario/5"))
+    void listByCliente_unauthenticated_returnsForbidden() throws Exception {
+        mockMvc.perform(get("/api/historial-canjes/cliente/5"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void listByCliente_clienteAccessingOwnHistory_returnsOk() throws Exception {
+        // given — ROLE_CLIENTE with matching id passes SpEL
+        HistorialCanje canje = new HistorialCanje();
+        canje.setId(1);
+
+        HistorialCanjeResponse response = new HistorialCanjeResponse();
+        response.setId(1);
+
+        when(historialCanjeService.listByCliente(5)).thenReturn(List.of(canje));
+        when(historialCanjeMapper.toDto(any())).thenReturn(response);
+
+        mockMvc.perform(get("/api/historial-canjes/cliente/5").with(asClienteWithId(5)))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void listByCliente_fromDifferentCliente_returnsForbidden() throws Exception {
+        mockMvc.perform(get("/api/historial-canjes/cliente/5").with(asClienteWithId(2)))
                 .andExpect(status().isForbidden());
     }
 
@@ -81,7 +107,7 @@ class HistorialCanjeControllerTest extends BaseControllerTest {
         response.setId(1);
 
         when(historialCanjeService.listByPromocion(10)).thenReturn(List.of(canje));
-        when(modelMapper.map(any(), eq(HistorialCanjeResponse.class))).thenReturn(response);
+        when(historialCanjeMapper.toDto(any())).thenReturn(response);
 
         // when & then
         mockMvc.perform(get("/api/historial-canjes/promocion/10").with(asUsuario()))
@@ -102,7 +128,7 @@ class HistorialCanjeControllerTest extends BaseControllerTest {
     }
 
     // ================================================================== //
-    //  POST /api/historial-canjes  (@RequestParam — no JSON body)         //
+    //  POST /api/historial-canjes  (clienteId from JWT principal)         //
     // ================================================================== //
 
     @Test
@@ -116,13 +142,12 @@ class HistorialCanjeControllerTest extends BaseControllerTest {
         response.setCodigoValidacion("ABCD1234");
 
         when(historialCanjeService.canjear(10, 5, "ABCD1234")).thenReturn(canje);
-        when(modelMapper.map(canje, HistorialCanjeResponse.class)).thenReturn(response);
+        when(historialCanjeMapper.toDto(canje)).thenReturn(response);
 
-        // when & then — params in query string, NOT in request body
+        // when & then — clienteId now comes from the JWT principal, not a request param
         mockMvc.perform(post("/api/historial-canjes")
-                        .with(asUsuario())
+                        .with(asClienteWithId(5))
                         .param("promocionId", "10")
-                        .param("usuarioId", "5")
                         .param("codigoValidacion", "ABCD1234"))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.message").value("Recurso creado"));
@@ -136,9 +161,8 @@ class HistorialCanjeControllerTest extends BaseControllerTest {
 
         // when & then
         mockMvc.perform(post("/api/historial-canjes")
-                        .with(asUsuario())
+                        .with(asClienteWithId(5))
                         .param("promocionId", "10")
-                        .param("usuarioId", "5")
                         .param("codigoValidacion", "WRONGCOD"))
                 .andExpect(status().isUnprocessableEntity());
     }
@@ -147,9 +171,8 @@ class HistorialCanjeControllerTest extends BaseControllerTest {
     void canjear_typeMismatch_returnsBadRequest() throws Exception {
         // "abc" cannot be bound to Integer promocionId → MethodArgumentTypeMismatchException → 400
         mockMvc.perform(post("/api/historial-canjes")
-                        .with(asUsuario())
+                        .with(asClienteWithId(1))
                         .param("promocionId", "abc")
-                        .param("usuarioId", "5")
                         .param("codigoValidacion", "ABCD1234"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error").value("Bad Request"));

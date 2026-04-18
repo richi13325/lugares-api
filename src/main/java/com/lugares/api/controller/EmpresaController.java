@@ -3,9 +3,9 @@ package com.lugares.api.controller;
 import com.lugares.api.common.ApiResponse;
 import com.lugares.api.dto.response.EmpresaResponse;
 import com.lugares.api.entity.Empresa;
+import com.lugares.api.mapper.EmpresaMapper;
 import com.lugares.api.service.EmpresaService;
 import lombok.RequiredArgsConstructor;
-import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -25,34 +25,32 @@ import java.util.List;
 public class EmpresaController {
 
     private final EmpresaService empresaService;
-    private final ModelMapper modelMapper;
+    private final EmpresaMapper empresaMapper;
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<EmpresaResponse>>> listAll() {
         List<EmpresaResponse> response = empresaService.listAll().stream()
-                .map(e -> modelMapper.map(e, EmpresaResponse.class))
+                .map(empresaMapper::toDto)
                 .toList();
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<EmpresaResponse>> getById(@PathVariable Integer id) {
-        EmpresaResponse response = modelMapper.map(empresaService.getById(id), EmpresaResponse.class);
+        EmpresaResponse response = empresaMapper.toDto(empresaService.getById(id));
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
     @PostMapping
     public ResponseEntity<ApiResponse<EmpresaResponse>> create(@RequestBody Empresa empresa) {
         Empresa saved = empresaService.create(empresa);
-        EmpresaResponse response = modelMapper.map(saved, EmpresaResponse.class);
-        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.created(response));
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.created(empresaMapper.toDto(saved)));
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<EmpresaResponse>> update(@PathVariable Integer id, @RequestBody Empresa empresa) {
         Empresa updated = empresaService.update(id, empresa);
-        EmpresaResponse response = modelMapper.map(updated, EmpresaResponse.class);
-        return ResponseEntity.ok(ApiResponse.success(response));
+        return ResponseEntity.ok(ApiResponse.success(empresaMapper.toDto(updated)));
     }
 
     @DeleteMapping("/{id}")

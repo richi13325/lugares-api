@@ -5,10 +5,11 @@ import com.lugares.api.dto.response.EstablecimientoListResponse;
 import com.lugares.api.dto.response.EstablecimientoResponse;
 import com.lugares.api.entity.Establecimiento;
 import com.lugares.api.exception.ResourceNotFoundException;
+import com.lugares.api.mapper.EstablecimientoMapper;
 import com.lugares.api.service.EstablecimientoService;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -32,8 +33,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(EstablecimientoController.class)
 class EstablecimientoControllerTest extends BaseControllerTest {
 
-    @MockBean
+    @MockitoBean
     private EstablecimientoService establecimientoService;
+
+    @MockitoBean
+    private EstablecimientoMapper establecimientoMapper;
 
     // ================================================================== //
     //  GET /api/establecimientos/{id}                                     //
@@ -51,7 +55,7 @@ class EstablecimientoControllerTest extends BaseControllerTest {
         response.setNombre("La Trattoria");
 
         when(establecimientoService.getById(1)).thenReturn(entity);
-        when(modelMapper.map(entity, EstablecimientoDetailResponse.class)).thenReturn(response);
+        when(establecimientoMapper.toDetailDto(entity)).thenReturn(response);
 
         // when & then
         mockMvc.perform(get("/api/establecimientos/1").with(asUsuario()))
@@ -101,7 +105,7 @@ class EstablecimientoControllerTest extends BaseControllerTest {
         listResp.setNombre("Test");
 
         when(establecimientoService.list(isNull(), any())).thenReturn(page);
-        when(modelMapper.map(any(), eq(EstablecimientoListResponse.class))).thenReturn(listResp);
+        when(establecimientoMapper.toListDto(any())).thenReturn(listResp);
 
         // when & then
         mockMvc.perform(get("/api/establecimientos").with(asUsuario()))
@@ -139,7 +143,7 @@ class EstablecimientoControllerTest extends BaseControllerTest {
         listResp.setNombre("Restaurante Central");
 
         when(establecimientoService.listByTipoEstablecimiento(eq(1), isNull(), any())).thenReturn(page);
-        when(modelMapper.map(any(), eq(EstablecimientoListResponse.class))).thenReturn(listResp);
+        when(establecimientoMapper.toListDto(any())).thenReturn(listResp);
 
         // when & then
         mockMvc.perform(get("/api/establecimientos/tipo/1?page=0&size=10").with(asUsuario()))
@@ -163,7 +167,7 @@ class EstablecimientoControllerTest extends BaseControllerTest {
         response.setNombre("Resto");
 
         when(establecimientoService.findByEtiquetas(any(), eq(true))).thenReturn(List.of(e1));
-        when(modelMapper.map(any(), eq(EstablecimientoResponse.class))).thenReturn(response);
+        when(establecimientoMapper.toDto(any())).thenReturn(response);
 
         // when & then
         mockMvc.perform(post("/api/establecimientos/filtro")
@@ -209,10 +213,10 @@ class EstablecimientoControllerTest extends BaseControllerTest {
         response.setNombre("Sugerido");
 
         when(establecimientoService.findSugeridos(5)).thenReturn(List.of(e1));
-        when(modelMapper.map(any(), eq(EstablecimientoResponse.class))).thenReturn(response);
+        when(establecimientoMapper.toDto(any())).thenReturn(response);
 
         // when & then
-        mockMvc.perform(get("/api/establecimientos/sugeridos/5").with(asUsuario()))
+        mockMvc.perform(get("/api/establecimientos/sugeridos/5").with(asClienteWithId(5)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data").isArray());
     }
@@ -224,9 +228,15 @@ class EstablecimientoControllerTest extends BaseControllerTest {
                 .thenThrow(new ResourceNotFoundException("Cliente", "id", 999));
 
         // when & then
-        mockMvc.perform(get("/api/establecimientos/sugeridos/999").with(asUsuario()))
+        mockMvc.perform(get("/api/establecimientos/sugeridos/999").with(asClienteWithId(999)))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.error").value("Not Found"));
+    }
+
+    @Test
+    void sugeridos_fromDifferentCliente_returnsForbidden() throws Exception {
+        mockMvc.perform(get("/api/establecimientos/sugeridos/5").with(asClienteWithId(2)))
+                .andExpect(status().isForbidden());
     }
 
     // ================================================================== //
@@ -235,7 +245,7 @@ class EstablecimientoControllerTest extends BaseControllerTest {
 
     @Test
     void create_validRequest_returnsCreated() throws Exception {
-        // given — mapRequestToEntity calls modelMapper.map(request, Establecimiento.class) first
+        // given
         Establecimiento entity = new Establecimiento();
         entity.setId(0);
         entity.setNombre("Nuevo Local");
@@ -248,9 +258,9 @@ class EstablecimientoControllerTest extends BaseControllerTest {
         response.setId(10);
         response.setNombre("Nuevo Local");
 
-        when(modelMapper.map(any(), eq(Establecimiento.class))).thenReturn(entity);
+        when(establecimientoMapper.toEntity(any())).thenReturn(entity);
         when(establecimientoService.create(any())).thenReturn(saved);
-        when(modelMapper.map(saved, EstablecimientoDetailResponse.class)).thenReturn(response);
+        when(establecimientoMapper.toDetailDto(saved)).thenReturn(response);
 
         // when & then
         mockMvc.perform(post("/api/establecimientos")
@@ -292,9 +302,9 @@ class EstablecimientoControllerTest extends BaseControllerTest {
         response.setId(1);
         response.setNombre("Local Actualizado");
 
-        when(modelMapper.map(any(), eq(Establecimiento.class))).thenReturn(entity);
+        when(establecimientoMapper.toEntity(any())).thenReturn(entity);
         when(establecimientoService.update(eq(1), any())).thenReturn(updated);
-        when(modelMapper.map(updated, EstablecimientoDetailResponse.class)).thenReturn(response);
+        when(establecimientoMapper.toDetailDto(updated)).thenReturn(response);
 
         // when & then
         mockMvc.perform(put("/api/establecimientos/1")
@@ -309,7 +319,7 @@ class EstablecimientoControllerTest extends BaseControllerTest {
     void update_nonExistentId_returnsNotFound() throws Exception {
         // given
         Establecimiento entity = new Establecimiento();
-        when(modelMapper.map(any(), eq(Establecimiento.class))).thenReturn(entity);
+        when(establecimientoMapper.toEntity(any())).thenReturn(entity);
         when(establecimientoService.update(eq(999), any()))
                 .thenThrow(new ResourceNotFoundException("Establecimiento", "id", 999));
 

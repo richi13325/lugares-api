@@ -3,9 +3,9 @@ package com.lugares.api.controller;
 import com.lugares.api.common.ApiResponse;
 import com.lugares.api.dto.response.MarcaResponse;
 import com.lugares.api.entity.Marca;
+import com.lugares.api.mapper.MarcaMapper;
 import com.lugares.api.service.MarcaService;
 import lombok.RequiredArgsConstructor;
-import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -25,34 +25,32 @@ import java.util.List;
 public class MarcaController {
 
     private final MarcaService marcaService;
-    private final ModelMapper modelMapper;
+    private final MarcaMapper marcaMapper;
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<MarcaResponse>>> listAll() {
         List<MarcaResponse> response = marcaService.listAll().stream()
-                .map(m -> modelMapper.map(m, MarcaResponse.class))
+                .map(marcaMapper::toDto)
                 .toList();
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<MarcaResponse>> getById(@PathVariable Integer id) {
-        MarcaResponse response = modelMapper.map(marcaService.getById(id), MarcaResponse.class);
+        MarcaResponse response = marcaMapper.toDto(marcaService.getById(id));
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
     @PostMapping
     public ResponseEntity<ApiResponse<MarcaResponse>> create(@RequestBody Marca marca) {
         Marca saved = marcaService.create(marca);
-        MarcaResponse response = modelMapper.map(saved, MarcaResponse.class);
-        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.created(response));
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.created(marcaMapper.toDto(saved)));
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<MarcaResponse>> update(@PathVariable Integer id, @RequestBody Marca marca) {
         Marca updated = marcaService.update(id, marca);
-        MarcaResponse response = modelMapper.map(updated, MarcaResponse.class);
-        return ResponseEntity.ok(ApiResponse.success(response));
+        return ResponseEntity.ok(ApiResponse.success(marcaMapper.toDto(updated)));
     }
 
     @DeleteMapping("/{id}")

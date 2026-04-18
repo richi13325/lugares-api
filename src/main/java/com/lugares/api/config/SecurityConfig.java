@@ -36,6 +36,54 @@ public class SecurityConfig {
                         .requestMatchers("/swagger-ui/**").permitAll()
                         .requestMatchers("/v3/api-docs*/**").permitAll()
                         .requestMatchers("/api/contacto/**").permitAll()
+
+                        .requestMatchers(HttpMethod.GET,
+                                "/api/establecimientos/**",
+                                "/api/promociones/**",
+                                "/api/suscripciones/**",
+                                "/api/tipos-establecimiento/**",
+                                "/api/categorias-etiqueta/**",
+                                "/api/capsulas-culturales/**",
+                                "/api/comentarios/establecimiento/**",
+                                "/api/etiquetas/visibles",
+                                "/api/etiquetas/{id:\\d+}",
+                                "/api/etiquetas/establecimiento/**",
+                                "/api/etiquetas/tipo-establecimiento/**"
+                        ).authenticated()
+
+                        .requestMatchers("/api/calificaciones/**", "/api/fcm-tokens/**").hasRole("CLIENTE")
+                        .requestMatchers(HttpMethod.POST, "/api/comentarios").hasRole("CLIENTE")
+
+                        .requestMatchers("/api/usuarios/**", "/api/empresas/**", "/api/marcas/**").hasRole("USUARIO")
+                        .requestMatchers("/api/notificaciones/**").hasRole("USUARIO")
+                        .requestMatchers("/api/etiquetas/admin").hasRole("USUARIO")
+                        .requestMatchers(HttpMethod.DELETE, "/api/comentarios/**").hasRole("USUARIO")
+
+                        .requestMatchers(HttpMethod.POST,
+                                "/api/establecimientos",
+                                "/api/promociones",
+                                "/api/etiquetas",
+                                "/api/capsulas-culturales",
+                                "/api/categorias-etiqueta",
+                                "/api/tipos-establecimiento"
+                        ).hasRole("USUARIO")
+                        .requestMatchers(HttpMethod.PUT,
+                                "/api/establecimientos/**",
+                                "/api/promociones/**",
+                                "/api/etiquetas/{id:\\d+}",
+                                "/api/capsulas-culturales/**",
+                                "/api/categorias-etiqueta/**",
+                                "/api/tipos-establecimiento/**"
+                        ).hasRole("USUARIO")
+                        .requestMatchers(HttpMethod.DELETE,
+                                "/api/establecimientos/**",
+                                "/api/promociones/**",
+                                "/api/etiquetas/{id:\\d+}",
+                                "/api/capsulas-culturales/**",
+                                "/api/categorias-etiqueta/**",
+                                "/api/tipos-establecimiento/**"
+                        ).hasRole("USUARIO")
+
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

@@ -7,10 +7,10 @@ import com.lugares.api.dto.response.ClienteResponse;
 import com.lugares.api.dto.response.LoginResponse;
 import com.lugares.api.entity.Cliente;
 import com.lugares.api.entity.Usuario;
+import com.lugares.api.mapper.ClienteMapper;
 import com.lugares.api.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -24,7 +24,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
 
     private final AuthService authService;
-    private final ModelMapper modelMapper;
+    private final ClienteMapper clienteMapper;
 
     @PostMapping("/cliente/login")
     public ResponseEntity<ApiResponse<LoginResponse>> loginCliente(@Valid @RequestBody AuthRequest request) {
@@ -44,9 +44,8 @@ public class AuthController {
 
     @PostMapping("/cliente/register")
     public ResponseEntity<ApiResponse<ClienteResponse>> registerCliente(@Valid @RequestBody ClienteRequest request) {
-        Cliente entity = modelMapper.map(request, Cliente.class);
+        Cliente entity = clienteMapper.toEntity(request);
         Cliente saved = authService.registerCliente(entity);
-        ClienteResponse response = modelMapper.map(saved, ClienteResponse.class);
-        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.created(response));
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.created(clienteMapper.toDto(saved)));
     }
 }

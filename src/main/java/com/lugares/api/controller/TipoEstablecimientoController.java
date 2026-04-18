@@ -3,9 +3,9 @@ package com.lugares.api.controller;
 import com.lugares.api.common.ApiResponse;
 import com.lugares.api.dto.response.TipoEstablecimientoResponse;
 import com.lugares.api.entity.TipoEstablecimiento;
+import com.lugares.api.mapper.TipoEstablecimientoMapper;
 import com.lugares.api.service.TipoEstablecimientoService;
 import lombok.RequiredArgsConstructor;
-import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -25,34 +25,32 @@ import java.util.List;
 public class TipoEstablecimientoController {
 
     private final TipoEstablecimientoService tipoEstablecimientoService;
-    private final ModelMapper modelMapper;
+    private final TipoEstablecimientoMapper tipoEstablecimientoMapper;
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<TipoEstablecimientoResponse>>> listAll() {
         List<TipoEstablecimientoResponse> response = tipoEstablecimientoService.listAll().stream()
-                .map(t -> modelMapper.map(t, TipoEstablecimientoResponse.class))
+                .map(tipoEstablecimientoMapper::toDto)
                 .toList();
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<TipoEstablecimientoResponse>> getById(@PathVariable Integer id) {
-        TipoEstablecimientoResponse response = modelMapper.map(tipoEstablecimientoService.getById(id), TipoEstablecimientoResponse.class);
+        TipoEstablecimientoResponse response = tipoEstablecimientoMapper.toDto(tipoEstablecimientoService.getById(id));
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
     @PostMapping
     public ResponseEntity<ApiResponse<TipoEstablecimientoResponse>> create(@RequestBody TipoEstablecimiento tipo) {
         TipoEstablecimiento saved = tipoEstablecimientoService.create(tipo);
-        TipoEstablecimientoResponse response = modelMapper.map(saved, TipoEstablecimientoResponse.class);
-        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.created(response));
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.created(tipoEstablecimientoMapper.toDto(saved)));
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<TipoEstablecimientoResponse>> update(@PathVariable Integer id, @RequestBody TipoEstablecimiento tipo) {
         TipoEstablecimiento updated = tipoEstablecimientoService.update(id, tipo);
-        TipoEstablecimientoResponse response = modelMapper.map(updated, TipoEstablecimientoResponse.class);
-        return ResponseEntity.ok(ApiResponse.success(response));
+        return ResponseEntity.ok(ApiResponse.success(tipoEstablecimientoMapper.toDto(updated)));
     }
 
     @DeleteMapping("/{id}")

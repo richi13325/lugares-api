@@ -5,10 +5,10 @@ import com.lugares.api.dto.request.UsuarioRequest;
 import com.lugares.api.dto.response.UsuarioListResponse;
 import com.lugares.api.dto.response.UsuarioResponse;
 import com.lugares.api.entity.Usuario;
+import com.lugares.api.mapper.UsuarioMapper;
 import com.lugares.api.service.UsuarioService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -29,13 +29,12 @@ import org.springframework.web.bind.annotation.RestController;
 public class UsuarioController {
 
     private final UsuarioService usuarioService;
-    private final ModelMapper modelMapper;
+    private final UsuarioMapper usuarioMapper;
 
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<UsuarioResponse>> getById(@PathVariable Integer id) {
         Usuario usuario = usuarioService.getById(id);
-        UsuarioResponse response = modelMapper.map(usuario, UsuarioResponse.class);
-        return ResponseEntity.ok(ApiResponse.success(response));
+        return ResponseEntity.ok(ApiResponse.success(usuarioMapper.toDto(usuario)));
     }
 
     @GetMapping
@@ -43,26 +42,24 @@ public class UsuarioController {
             @RequestParam(required = false) String nombre,
             Pageable pageable) {
         Page<UsuarioListResponse> page = usuarioService.list(nombre, pageable)
-                .map(u -> modelMapper.map(u, UsuarioListResponse.class));
+                .map(usuarioMapper::toListDto);
         return ResponseEntity.ok(ApiResponse.success(page));
     }
 
     @PostMapping
     public ResponseEntity<ApiResponse<UsuarioResponse>> create(@Valid @RequestBody UsuarioRequest request) {
-        Usuario entity = modelMapper.map(request, Usuario.class);
+        Usuario entity = usuarioMapper.toEntity(request);
         Usuario saved = usuarioService.create(entity);
-        UsuarioResponse response = modelMapper.map(saved, UsuarioResponse.class);
-        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.created(response));
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.created(usuarioMapper.toDto(saved)));
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<UsuarioResponse>> update(
             @PathVariable Integer id,
             @Valid @RequestBody UsuarioRequest request) {
-        Usuario entity = modelMapper.map(request, Usuario.class);
+        Usuario entity = usuarioMapper.toEntity(request);
         Usuario updated = usuarioService.update(id, entity);
-        UsuarioResponse response = modelMapper.map(updated, UsuarioResponse.class);
-        return ResponseEntity.ok(ApiResponse.success(response));
+        return ResponseEntity.ok(ApiResponse.success(usuarioMapper.toDto(updated)));
     }
 
     @DeleteMapping("/{id}")

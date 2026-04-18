@@ -3,9 +3,9 @@ package com.lugares.api.controller;
 import com.lugares.api.common.ApiResponse;
 import com.lugares.api.dto.response.CategoriaEtiquetaResponse;
 import com.lugares.api.entity.CategoriaEtiqueta;
+import com.lugares.api.mapper.CategoriaEtiquetaMapper;
 import com.lugares.api.service.CategoriaEtiquetaService;
 import lombok.RequiredArgsConstructor;
-import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -25,34 +25,32 @@ import java.util.List;
 public class CategoriaEtiquetaController {
 
     private final CategoriaEtiquetaService categoriaEtiquetaService;
-    private final ModelMapper modelMapper;
+    private final CategoriaEtiquetaMapper categoriaEtiquetaMapper;
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<CategoriaEtiquetaResponse>>> listAll() {
         List<CategoriaEtiquetaResponse> response = categoriaEtiquetaService.listAll().stream()
-                .map(c -> modelMapper.map(c, CategoriaEtiquetaResponse.class))
+                .map(categoriaEtiquetaMapper::toDto)
                 .toList();
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<CategoriaEtiquetaResponse>> getById(@PathVariable Integer id) {
-        CategoriaEtiquetaResponse response = modelMapper.map(categoriaEtiquetaService.getById(id), CategoriaEtiquetaResponse.class);
+        CategoriaEtiquetaResponse response = categoriaEtiquetaMapper.toDto(categoriaEtiquetaService.getById(id));
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
     @PostMapping
     public ResponseEntity<ApiResponse<CategoriaEtiquetaResponse>> create(@RequestBody CategoriaEtiqueta categoria) {
         CategoriaEtiqueta saved = categoriaEtiquetaService.create(categoria);
-        CategoriaEtiquetaResponse response = modelMapper.map(saved, CategoriaEtiquetaResponse.class);
-        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.created(response));
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.created(categoriaEtiquetaMapper.toDto(saved)));
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<CategoriaEtiquetaResponse>> update(@PathVariable Integer id, @RequestBody CategoriaEtiqueta categoria) {
         CategoriaEtiqueta updated = categoriaEtiquetaService.update(id, categoria);
-        CategoriaEtiquetaResponse response = modelMapper.map(updated, CategoriaEtiquetaResponse.class);
-        return ResponseEntity.ok(ApiResponse.success(response));
+        return ResponseEntity.ok(ApiResponse.success(categoriaEtiquetaMapper.toDto(updated)));
     }
 
     @DeleteMapping("/{id}")

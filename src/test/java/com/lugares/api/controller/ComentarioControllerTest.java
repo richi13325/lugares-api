@@ -3,10 +3,11 @@ package com.lugares.api.controller;
 import com.lugares.api.dto.response.ComentarioResponse;
 import com.lugares.api.entity.Comentario;
 import com.lugares.api.exception.ResourceNotFoundException;
+import com.lugares.api.mapper.ComentarioMapper;
 import com.lugares.api.service.ComentarioService;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.http.MediaType;
 
 import java.util.List;
@@ -24,8 +25,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(ComentarioController.class)
 class ComentarioControllerTest extends BaseControllerTest {
 
-    @MockBean
+    @MockitoBean
     private ComentarioService comentarioService;
+
+    @MockitoBean
+    private ComentarioMapper comentarioMapper;
 
     // ================================================================== //
     //  GET /api/comentarios/establecimiento/{establecimientoId}           //
@@ -42,7 +46,7 @@ class ComentarioControllerTest extends BaseControllerTest {
         response.setComentario("Excelente lugar");
 
         when(comentarioService.listByEstablecimiento(10)).thenReturn(List.of(c1));
-        when(modelMapper.map(any(), eq(ComentarioResponse.class))).thenReturn(response);
+        when(comentarioMapper.toDto(any())).thenReturn(response);
 
         // when & then
         mockMvc.perform(get("/api/comentarios/establecimiento/10").with(asUsuario()))
@@ -83,26 +87,25 @@ class ComentarioControllerTest extends BaseControllerTest {
         response.setComentario("Excelente lugar");
 
         when(comentarioService.create(1, 10, "Excelente lugar")).thenReturn(entity);
-        when(modelMapper.map(entity, ComentarioResponse.class)).thenReturn(response);
+        when(comentarioMapper.toDto(entity)).thenReturn(response);
 
         // when & then
         mockMvc.perform(post("/api/comentarios")
-                        .with(asUsuario())
+                        .with(asClienteWithId(1))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"idCliente\":1,\"idEstablecimiento\":10,\"comentario\":\"Excelente lugar\"}"))
+                        .content("{\"idEstablecimiento\":10,\"comentario\":\"Excelente lugar\"}"))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.message").value("Recurso creado"));
     }
 
     @Test
     void create_nullFields_returnsBadRequest() throws Exception {
-        // given — null ids and blank comment
+        // given — null id and blank comment
         mockMvc.perform(post("/api/comentarios")
-                        .with(asUsuario())
+                        .with(asClienteWithId(1))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"comentario\":\"\"}"))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.fieldErrors.idCliente").exists())
                 .andExpect(jsonPath("$.fieldErrors.idEstablecimiento").exists())
                 .andExpect(jsonPath("$.fieldErrors.comentario").exists());
     }
@@ -113,9 +116,9 @@ class ComentarioControllerTest extends BaseControllerTest {
         String comentarioLargo = "C".repeat(556);
 
         mockMvc.perform(post("/api/comentarios")
-                        .with(asUsuario())
+                        .with(asClienteWithId(1))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"idCliente\":1,\"idEstablecimiento\":10,\"comentario\":\"" + comentarioLargo + "\"}"))
+                        .content("{\"idEstablecimiento\":10,\"comentario\":\"" + comentarioLargo + "\"}"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.fieldErrors.comentario")
                         .value("El comentario no puede exceder 555 caracteres"));

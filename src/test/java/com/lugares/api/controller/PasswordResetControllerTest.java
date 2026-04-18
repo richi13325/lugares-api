@@ -7,7 +7,7 @@ import com.lugares.api.exception.BusinessRuleException;
 import com.lugares.api.service.PasswordResetService;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.http.MediaType;
 
 import static org.mockito.ArgumentMatchers.anyString;
@@ -20,7 +20,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(PasswordResetController.class)
 class PasswordResetControllerTest extends BaseControllerTest {
 
-    @MockBean
+    @MockitoBean
     private PasswordResetService passwordResetService;
 
     // ================================================================== //

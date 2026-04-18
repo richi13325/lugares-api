@@ -4,7 +4,7 @@ import com.lugares.api.entity.FcmToken;
 import com.lugares.api.service.FcmTokenService;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.http.MediaType;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -18,7 +18,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(FcmTokenController.class)
 class FcmTokenControllerTest extends BaseControllerTest {
 
-    @MockBean
+    @MockitoBean
     private FcmTokenService fcmTokenService;
 
     // ================================================================== //
@@ -35,9 +35,9 @@ class FcmTokenControllerTest extends BaseControllerTest {
         // GOTCHA: returns 201 but uses ApiResponse.noContent(), so message = "Operacion exitosa"
         //         and $.data does NOT exist
         mockMvc.perform(post("/api/fcm-tokens")
-                        .with(asUsuario())
+                        .with(asClienteWithId(1))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"token\":\"abc123token\",\"idCliente\":1,\"plataforma\":\"ANDROID\"}"))
+                        .content("{\"token\":\"abc123token\",\"plataforma\":\"ANDROID\"}"))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.status").value(1))
                 .andExpect(jsonPath("$.message").value("Operacion exitosa"))
@@ -48,14 +48,13 @@ class FcmTokenControllerTest extends BaseControllerTest {
 
     @Test
     void registrar_allBlankOrNull_returnsBadRequest() throws Exception {
-        // given — token blank, idCliente null, plataforma blank
+        // given — token blank, plataforma blank
         mockMvc.perform(post("/api/fcm-tokens")
-                        .with(asUsuario())
+                        .with(asClienteWithId(1))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"token\":\"\",\"idCliente\":null,\"plataforma\":\"\"}"))
+                        .content("{\"token\":\"\",\"plataforma\":\"\"}"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.fieldErrors.token").exists())
-                .andExpect(jsonPath("$.fieldErrors.idCliente").exists())
                 .andExpect(jsonPath("$.fieldErrors.plataforma").exists());
     }
 
@@ -63,9 +62,9 @@ class FcmTokenControllerTest extends BaseControllerTest {
     void registrar_blankTokenOnly_returnsBadRequest() throws Exception {
         // given — only token blank, rest valid
         mockMvc.perform(post("/api/fcm-tokens")
-                        .with(asUsuario())
+                        .with(asClienteWithId(1))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"token\":\"\",\"idCliente\":1,\"plataforma\":\"IOS\"}"))
+                        .content("{\"token\":\"\",\"plataforma\":\"IOS\"}"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.fieldErrors.token").exists());
     }
@@ -74,7 +73,7 @@ class FcmTokenControllerTest extends BaseControllerTest {
     void registrar_unauthenticated_returnsForbidden() throws Exception {
         mockMvc.perform(post("/api/fcm-tokens")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"token\":\"abc123token\",\"idCliente\":1,\"plataforma\":\"ANDROID\"}"))
+                        .content("{\"token\":\"abc123token\",\"plataforma\":\"ANDROID\"}"))
                 .andExpect(status().isForbidden());
     }
 }

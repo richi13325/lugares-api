@@ -11,7 +11,7 @@ public class HistorialCanjeResponse {
 
     private Integer id;
     private String promocionNombre;
-    private String usuarioNombre;
+    private String clienteNombre;
     private LocalDateTime fechaHora;
     private String codigoValidacion;
 }

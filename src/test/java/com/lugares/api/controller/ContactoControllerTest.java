@@ -4,7 +4,7 @@ import com.lugares.api.dto.request.ContactoRequest;
 import com.lugares.api.service.ContactoService;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.http.MediaType;
 
 import static org.mockito.Mockito.verify;
@@ -15,7 +15,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(ContactoController.class)
 class ContactoControllerTest extends BaseControllerTest {
 
-    @MockBean
+    @MockitoBean
     private ContactoService contactoService;
 
     // ================================================================== //

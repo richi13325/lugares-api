@@ -10,9 +10,6 @@ import lombok.Setter;
 @Setter
 public class ComentarioRequest {
 
-    @NotNull(message = "El cliente es obligatorio")
-    private Integer idCliente;
-
     @NotNull(message = "El establecimiento es obligatorio")
     private Integer idEstablecimiento;
 

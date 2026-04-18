@@ -6,10 +6,11 @@ import com.lugares.api.dto.response.UsuarioResponse;
 import com.lugares.api.entity.Usuario;
 import com.lugares.api.exception.DuplicateResourceException;
 import com.lugares.api.exception.ResourceNotFoundException;
+import com.lugares.api.mapper.UsuarioMapper;
 import com.lugares.api.service.UsuarioService;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -33,8 +34,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(UsuarioController.class)
 class UsuarioControllerTest extends BaseControllerTest {
 
-    @MockBean
+    @MockitoBean
     private UsuarioService usuarioService;
+
+    @MockitoBean
+    private UsuarioMapper usuarioMapper;
 
     // ================================================================== //
     //  GET /api/usuarios/{id}                                             //
@@ -52,7 +56,7 @@ class UsuarioControllerTest extends BaseControllerTest {
         response.setCorreoElectronico("admin@test.com");
 
         when(usuarioService.getById(1)).thenReturn(entity);
-        when(modelMapper.map(entity, UsuarioResponse.class)).thenReturn(response);
+        when(usuarioMapper.toDto(entity)).thenReturn(response);
 
         // when & then
         mockMvc.perform(get("/api/usuarios/1").with(asUsuario()))
@@ -94,7 +98,7 @@ class UsuarioControllerTest extends BaseControllerTest {
 
         UsuarioListResponse listResponse = new UsuarioListResponse();
         listResponse.setId(1);
-        when(modelMapper.map(any(), eq(UsuarioListResponse.class))).thenReturn(listResponse);
+        when(usuarioMapper.toListDto(any())).thenReturn(listResponse);
 
         // when & then
         mockMvc.perform(get("/api/usuarios")
@@ -116,7 +120,7 @@ class UsuarioControllerTest extends BaseControllerTest {
 
         UsuarioListResponse listResponse = new UsuarioListResponse();
         listResponse.setId(2);
-        when(modelMapper.map(any(), eq(UsuarioListResponse.class))).thenReturn(listResponse);
+        when(usuarioMapper.toListDto(any())).thenReturn(listResponse);
 
         // when & then
         mockMvc.perform(get("/api/usuarios")
@@ -143,9 +147,9 @@ class UsuarioControllerTest extends BaseControllerTest {
         response.setId(1);
         response.setNombre("Nuevo Usuario");
 
-        when(modelMapper.map(any(UsuarioRequest.class), eq(Usuario.class))).thenReturn(entity);
+        when(usuarioMapper.toEntity(any(UsuarioRequest.class))).thenReturn(entity);
         when(usuarioService.create(any())).thenReturn(entity);
-        when(modelMapper.map(entity, UsuarioResponse.class)).thenReturn(response);
+        when(usuarioMapper.toDto(entity)).thenReturn(response);
 
         // when & then
         mockMvc.perform(post("/api/usuarios")
@@ -196,7 +200,7 @@ class UsuarioControllerTest extends BaseControllerTest {
         // given
         String email = "duplicado@test.com";
         Usuario entity = new Usuario();
-        when(modelMapper.map(any(UsuarioRequest.class), eq(Usuario.class))).thenReturn(entity);
+        when(usuarioMapper.toEntity(any(UsuarioRequest.class))).thenReturn(entity);
         when(usuarioService.create(any()))
                 .thenThrow(new DuplicateResourceException("Usuario", "correoElectronico", email));
 
@@ -221,9 +225,9 @@ class UsuarioControllerTest extends BaseControllerTest {
         UsuarioResponse response = new UsuarioResponse();
         response.setId(1);
 
-        when(modelMapper.map(any(UsuarioRequest.class), eq(Usuario.class))).thenReturn(entity);
+        when(usuarioMapper.toEntity(any(UsuarioRequest.class))).thenReturn(entity);
         when(usuarioService.update(eq(1), any())).thenReturn(entity);
-        when(modelMapper.map(entity, UsuarioResponse.class)).thenReturn(response);
+        when(usuarioMapper.toDto(entity)).thenReturn(response);
 
         // when & then
         mockMvc.perform(put("/api/usuarios/1")
@@ -238,7 +242,7 @@ class UsuarioControllerTest extends BaseControllerTest {
     void update_nonExistentId_returnsNotFound() throws Exception {
         // given
         Usuario entity = new Usuario();
-        when(modelMapper.map(any(UsuarioRequest.class), eq(Usuario.class))).thenReturn(entity);
+        when(usuarioMapper.toEntity(any(UsuarioRequest.class))).thenReturn(entity);
         when(usuarioService.update(eq(999), any()))
                 .thenThrow(new ResourceNotFoundException("Usuario", "id", 999));
 

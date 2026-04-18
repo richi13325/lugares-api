@@ -4,14 +4,16 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.lugares.api.config.CorsProperties;
 import com.lugares.api.config.JwtAuthenticationFilter;
 import com.lugares.api.config.SecurityConfig;
+import com.lugares.api.entity.Cliente;
+import com.lugares.api.entity.Usuario;
 import com.lugares.api.repository.ClienteRepository;
 import com.lugares.api.repository.UsuarioRepository;
 import com.lugares.api.service.JwtService;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
 
@@ -37,13 +39,13 @@ public abstract class BaseControllerTest {
     //  Mocks required by JwtAuthenticationFilter                          //
     // ------------------------------------------------------------------ //
 
-    @MockBean
+    @MockitoBean
     protected JwtService jwtService;
 
-    @MockBean
+    @MockitoBean
     protected UsuarioRepository usuarioRepository;
 
-    @MockBean
+    @MockitoBean
     protected ClienteRepository clienteRepository;
 
     // ------------------------------------------------------------------ //
@@ -56,18 +58,16 @@ public abstract class BaseControllerTest {
      * @WebMvcTest does not load ApplicationConfig, so this bean would
      * be missing without the MockBean below.
      */
-    @MockBean(name = "globalAuthenticationManager")
+    @MockitoBean(name = "globalAuthenticationManager")
     protected AuthenticationManager globalAuthenticationManager;
 
-    @MockBean
-    protected CorsProperties corsProperties;
+ @MockitoBean    protected CorsProperties corsProperties;
 
     // ------------------------------------------------------------------ //
     //  Shared mock used by controllers that map DTOs                      //
     // ------------------------------------------------------------------ //
 
-    @MockBean
-    protected ModelMapper modelMapper;
+ @MockitoBean    protected ModelMapper modelMapper;
 
     // ------------------------------------------------------------------ //
     //  Security helpers                                                   //
@@ -79,5 +79,19 @@ public abstract class BaseControllerTest {
 
     protected static RequestPostProcessor asCliente() {
         return user("cliente@test.com").roles("CLIENTE");
+    }
+
+    protected static RequestPostProcessor asClienteWithId(Integer id) {
+        Cliente c = new Cliente();
+        c.setId(id);
+        c.setCorreoElectronico("cliente" + id + "@test.com");
+        return user(c);
+    }
+
+    protected static RequestPostProcessor asUsuarioWithId(Integer id) {
+        Usuario u = new Usuario();
+        u.setId(id);
+        u.setCorreoElectronico("usuario" + id + "@test.com");
+        return user(u);
     }
 }

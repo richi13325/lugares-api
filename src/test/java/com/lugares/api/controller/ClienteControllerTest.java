@@ -5,10 +5,11 @@ import com.lugares.api.dto.response.ClienteListResponse;
 import com.lugares.api.dto.response.ClienteResponse;
 import com.lugares.api.entity.Cliente;
 import com.lugares.api.exception.ResourceNotFoundException;
+import com.lugares.api.mapper.ClienteMapper;
 import com.lugares.api.service.ClienteService;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -31,8 +32,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(ClienteController.class)
 class ClienteControllerTest extends BaseControllerTest {
 
-    @MockBean
+    @MockitoBean
     private ClienteService clienteService;
+
+    @MockitoBean
+    private ClienteMapper clienteMapper;
 
     // ================================================================== //
     //  GET /api/clientes/{id}                                             //
@@ -49,7 +53,7 @@ class ClienteControllerTest extends BaseControllerTest {
         response.setNombre("Maria Lopez");
 
         when(clienteService.getById(1)).thenReturn(entity);
-        when(modelMapper.map(entity, ClienteResponse.class)).thenReturn(response);
+        when(clienteMapper.toDto(entity)).thenReturn(response);
 
         // when & then
         mockMvc.perform(get("/api/clientes/1").with(asUsuario()))
@@ -90,7 +94,7 @@ class ClienteControllerTest extends BaseControllerTest {
 
         ClienteListResponse listResponse = new ClienteListResponse();
         listResponse.setId(1);
-        when(modelMapper.map(any(), eq(ClienteListResponse.class))).thenReturn(listResponse);
+        when(clienteMapper.toListDto(any())).thenReturn(listResponse);
 
         // when & then
         mockMvc.perform(get("/api/clientes")
@@ -112,7 +116,7 @@ class ClienteControllerTest extends BaseControllerTest {
 
         ClienteListResponse listResponse = new ClienteListResponse();
         listResponse.setId(2);
-        when(modelMapper.map(any(), eq(ClienteListResponse.class))).thenReturn(listResponse);
+        when(clienteMapper.toListDto(any())).thenReturn(listResponse);
 
         // when & then
         mockMvc.perform(get("/api/clientes")
@@ -139,13 +143,13 @@ class ClienteControllerTest extends BaseControllerTest {
         response.setId(1);
         response.setNombre("Maria Actualizada");
 
-        when(modelMapper.map(any(ClienteUpdateRequest.class), eq(Cliente.class))).thenReturn(entity);
+        when(clienteMapper.toEntity(any(ClienteUpdateRequest.class))).thenReturn(entity);
         when(clienteService.update(eq(1), any())).thenReturn(entity);
-        when(modelMapper.map(entity, ClienteResponse.class)).thenReturn(response);
+        when(clienteMapper.toDto(entity)).thenReturn(response);
 
         // when & then
         mockMvc.perform(put("/api/clientes/1")
-                        .with(asUsuario())
+                        .with(asClienteWithId(1))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"nombre\":\"Maria Actualizada\",\"correoElectronico\":\"maria@test.com\"}"))
                 .andExpect(status().isOk())
@@ -156,7 +160,7 @@ class ClienteControllerTest extends BaseControllerTest {
     void update_invalidEmail_returnsBadRequest() throws Exception {
         // when & then
         mockMvc.perform(put("/api/clientes/1")
-                        .with(asUsuario())
+                        .with(asClienteWithId(1))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"correoElectronico\":\"not-email\"}"))
                 .andExpect(status().isBadRequest())
@@ -170,7 +174,7 @@ class ClienteControllerTest extends BaseControllerTest {
 
         // when & then
         mockMvc.perform(put("/api/clientes/1")
-                        .with(asUsuario())
+                        .with(asClienteWithId(1))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"telefono\":\"" + telefonoLargo + "\"}"))
                 .andExpect(status().isBadRequest())
@@ -181,17 +185,26 @@ class ClienteControllerTest extends BaseControllerTest {
     void update_nonExistentId_returnsNotFound() throws Exception {
         // given
         Cliente entity = new Cliente();
-        when(modelMapper.map(any(ClienteUpdateRequest.class), eq(Cliente.class))).thenReturn(entity);
+        when(clienteMapper.toEntity(any(ClienteUpdateRequest.class))).thenReturn(entity);
         when(clienteService.update(eq(999), any()))
                 .thenThrow(new ResourceNotFoundException("Cliente", "id", 999));
 
         // when & then
         mockMvc.perform(put("/api/clientes/999")
-                        .with(asUsuario())
+                        .with(asClienteWithId(999))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"nombre\":\"Inexistente\"}"))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.error").value("Not Found"));
+    }
+
+    @Test
+    void update_fromDifferentCliente_returnsForbidden() throws Exception {
+        mockMvc.perform(put("/api/clientes/1")
+                        .with(asClienteWithId(2))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"nombre\":\"Intruder\"}"))
+                .andExpect(status().isForbidden());
     }
 
     // ================================================================== //
@@ -216,5 +229,28 @@ class ClienteControllerTest extends BaseControllerTest {
         mockMvc.perform(delete("/api/clientes/999").with(asUsuario()))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.error").value("Not Found"));
+    }
+
+    @Test
+    void getById_clienteAccessingOwnProfile_returnsOk() throws Exception {
+        // given — ROLE_CLIENTE with matching id passes SpEL
+        Cliente entity = new Cliente();
+        entity.setId(1);
+
+        ClienteResponse response = new ClienteResponse();
+        response.setId(1);
+        response.setNombre("Maria Lopez");
+
+        when(clienteService.getById(1)).thenReturn(entity);
+        when(clienteMapper.toDto(entity)).thenReturn(response);
+
+        mockMvc.perform(get("/api/clientes/1").with(asClienteWithId(1)))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void getById_clienteAccessingOtherProfile_returnsForbidden() throws Exception {
+        mockMvc.perform(get("/api/clientes/1").with(asClienteWithId(2)))
+                .andExpect(status().isForbidden());
     }
 }

@@ -9,5 +9,5 @@ public interface HistorialCanjeRepository extends JpaRepository<HistorialCanje, 
 
     List<HistorialCanje> findByPromocionId(Integer promocionId);
 
-    List<HistorialCanje> findByUsuarioId(Integer usuarioId);
+    List<HistorialCanje> findByClienteId(Integer clienteId);
 }

@@ -3,10 +3,11 @@ package com.lugares.api.controller;
 import com.lugares.api.dto.response.MarcaResponse;
 import com.lugares.api.entity.Marca;
 import com.lugares.api.exception.ResourceNotFoundException;
+import com.lugares.api.mapper.MarcaMapper;
 import com.lugares.api.service.MarcaService;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.http.MediaType;
 
 import java.util.List;
@@ -25,8 +26,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(MarcaController.class)
 class MarcaControllerTest extends BaseControllerTest {
 
-    @MockBean
+    @MockitoBean
     private MarcaService marcaService;
+
+    @MockitoBean
+    private MarcaMapper marcaMapper;
 
     // ================================================================== //
     //  GET /api/marcas                                                    //
@@ -45,7 +49,7 @@ class MarcaControllerTest extends BaseControllerTest {
         response.setNombre("Nike");
 
         when(marcaService.listAll()).thenReturn(List.of(entity1, entity2));
-        when(modelMapper.map(any(), eq(MarcaResponse.class))).thenReturn(response);
+        when(marcaMapper.toDto(any())).thenReturn(response);
 
         // when & then
         mockMvc.perform(get("/api/marcas").with(asUsuario()))
@@ -76,7 +80,7 @@ class MarcaControllerTest extends BaseControllerTest {
         response.setNombre("Nike");
 
         when(marcaService.getById(1)).thenReturn(entity);
-        when(modelMapper.map(entity, MarcaResponse.class)).thenReturn(response);
+        when(marcaMapper.toDto(entity)).thenReturn(response);
 
         // when & then
         mockMvc.perform(get("/api/marcas/1").with(asUsuario()))
@@ -112,7 +116,7 @@ class MarcaControllerTest extends BaseControllerTest {
         response.setNombre("Nueva");
 
         when(marcaService.create(any())).thenReturn(savedEntity);
-        when(modelMapper.map(savedEntity, MarcaResponse.class)).thenReturn(response);
+        when(marcaMapper.toDto(savedEntity)).thenReturn(response);
 
         // when & then
         mockMvc.perform(post("/api/marcas")
@@ -138,7 +142,7 @@ class MarcaControllerTest extends BaseControllerTest {
         response.setId(1);
 
         when(marcaService.update(eq(1), any())).thenReturn(updated);
-        when(modelMapper.map(updated, MarcaResponse.class)).thenReturn(response);
+        when(marcaMapper.toDto(updated)).thenReturn(response);
 
         // when & then
         mockMvc.perform(put("/api/marcas/1")

@@ -8,10 +8,11 @@ import com.lugares.api.entity.EtiquetaEstablecimiento;
 import com.lugares.api.entity.EtiquetaTipoEstablecimiento;
 import com.lugares.api.exception.DuplicateResourceException;
 import com.lugares.api.exception.ResourceNotFoundException;
+import com.lugares.api.mapper.EtiquetaMapper;
 import com.lugares.api.service.EtiquetaService;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -35,8 +36,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(EtiquetaController.class)
 class EtiquetaControllerTest extends BaseControllerTest {
 
-    @MockBean
+    @MockitoBean
     private EtiquetaService etiquetaService;
+
+    @MockitoBean
+    private EtiquetaMapper etiquetaMapper;
 
     // ================================================================== //
     //  GET /api/etiquetas/{id}                                            //
@@ -54,7 +58,7 @@ class EtiquetaControllerTest extends BaseControllerTest {
         response.setNombre("Vegano");
 
         when(etiquetaService.getById(1)).thenReturn(entity);
-        when(modelMapper.map(entity, EtiquetaResponse.class)).thenReturn(response);
+        when(etiquetaMapper.toDto(entity)).thenReturn(response);
 
         // when & then
         mockMvc.perform(get("/api/etiquetas/1").with(asUsuario()))
@@ -97,7 +101,7 @@ class EtiquetaControllerTest extends BaseControllerTest {
         adminResp.setNombre("Vegano");
 
         when(etiquetaService.listAdmin(isNull(), any())).thenReturn(page);
-        when(modelMapper.map(any(), eq(EtiquetaAdminResponse.class))).thenReturn(adminResp);
+        when(etiquetaMapper.toAdminDto(any())).thenReturn(adminResp);
 
         // when & then
         mockMvc.perform(get("/api/etiquetas/admin").with(asUsuario()))
@@ -121,7 +125,7 @@ class EtiquetaControllerTest extends BaseControllerTest {
         response.setNombre("Vegano");
 
         when(etiquetaService.listVisibles()).thenReturn(List.of(e1));
-        when(modelMapper.map(any(), eq(EtiquetaResponse.class))).thenReturn(response);
+        when(etiquetaMapper.toDto(any())).thenReturn(response);
 
         // when & then
         mockMvc.perform(get("/api/etiquetas/visibles").with(asUsuario()))
@@ -135,7 +139,7 @@ class EtiquetaControllerTest extends BaseControllerTest {
 
     @Test
     void create_validRequest_returnsCreated() throws Exception {
-        // given — mapRequestToEntity calls modelMapper.map(request, Etiqueta.class)
+        // given
         Etiqueta entity = new Etiqueta();
         entity.setId(0);
 
@@ -147,9 +151,9 @@ class EtiquetaControllerTest extends BaseControllerTest {
         response.setId(5);
         response.setNombre("Test");
 
-        when(modelMapper.map(any(), eq(Etiqueta.class))).thenReturn(entity);
+        when(etiquetaMapper.toEntity(any())).thenReturn(entity);
         when(etiquetaService.create(any())).thenReturn(saved);
-        when(modelMapper.map(saved, EtiquetaAdminResponse.class)).thenReturn(response);
+        when(etiquetaMapper.toAdminDto(saved)).thenReturn(response);
 
         // when & then
         mockMvc.perform(post("/api/etiquetas")
@@ -188,7 +192,7 @@ class EtiquetaControllerTest extends BaseControllerTest {
     void create_duplicateNombre_returnsConflict() throws Exception {
         // given
         Etiqueta entity = new Etiqueta();
-        when(modelMapper.map(any(), eq(Etiqueta.class))).thenReturn(entity);
+        when(etiquetaMapper.toEntity(any())).thenReturn(entity);
         when(etiquetaService.create(any()))
                 .thenThrow(new DuplicateResourceException("Etiqueta", "nombre", "Vegano"));
 
@@ -218,9 +222,9 @@ class EtiquetaControllerTest extends BaseControllerTest {
         response.setId(1);
         response.setNombre("Actualizado");
 
-        when(modelMapper.map(any(), eq(Etiqueta.class))).thenReturn(entity);
+        when(etiquetaMapper.toEntity(any())).thenReturn(entity);
         when(etiquetaService.update(eq(1), any())).thenReturn(updated);
-        when(modelMapper.map(updated, EtiquetaAdminResponse.class)).thenReturn(response);
+        when(etiquetaMapper.toAdminDto(updated)).thenReturn(response);
 
         // when & then
         mockMvc.perform(put("/api/etiquetas/1")
@@ -235,7 +239,7 @@ class EtiquetaControllerTest extends BaseControllerTest {
     void update_nonExistentId_returnsNotFound() throws Exception {
         // given
         Etiqueta entity = new Etiqueta();
-        when(modelMapper.map(any(), eq(Etiqueta.class))).thenReturn(entity);
+        when(etiquetaMapper.toEntity(any())).thenReturn(entity);
         when(etiquetaService.update(eq(999), any()))
                 .thenThrow(new ResourceNotFoundException("Etiqueta", "id", 999));
 
@@ -291,10 +295,10 @@ class EtiquetaControllerTest extends BaseControllerTest {
         response.setNombre("Vegano");
 
         when(etiquetaService.listByCliente(1)).thenReturn(List.of(wrapper));
-        when(modelMapper.map(etiqueta, EtiquetaResponse.class)).thenReturn(response);
+        when(etiquetaMapper.toDto(etiqueta)).thenReturn(response);
 
         // when & then
-        mockMvc.perform(get("/api/etiquetas/cliente/1").with(asUsuario()))
+        mockMvc.perform(get("/api/etiquetas/cliente/1").with(asClienteWithId(1)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data").isArray());
     }
@@ -306,9 +310,15 @@ class EtiquetaControllerTest extends BaseControllerTest {
                 .thenThrow(new ResourceNotFoundException("Cliente", "id", 999));
 
         // when & then
-        mockMvc.perform(get("/api/etiquetas/cliente/999").with(asUsuario()))
+        mockMvc.perform(get("/api/etiquetas/cliente/999").with(asClienteWithId(999)))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.error").value("Not Found"));
+    }
+
+    @Test
+    void listByCliente_fromDifferentCliente_returnsForbidden() throws Exception {
+        mockMvc.perform(get("/api/etiquetas/cliente/1").with(asClienteWithId(2)))
+                .andExpect(status().isForbidden());
     }
 
     // ================================================================== //
@@ -318,7 +328,7 @@ class EtiquetaControllerTest extends BaseControllerTest {
     @Test
     void assignToCliente_valid_returnsCreatedWithNoData() throws Exception {
         // service returns void — no additional mock needed
-        mockMvc.perform(post("/api/etiquetas/cliente/1/10").with(asUsuario()))
+        mockMvc.perform(post("/api/etiquetas/cliente/1/10").with(asClienteWithId(1)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.data").doesNotExist());
     }
@@ -330,8 +340,14 @@ class EtiquetaControllerTest extends BaseControllerTest {
                 .when(etiquetaService).assignToCliente(1, 10);
 
         // when & then
-        mockMvc.perform(post("/api/etiquetas/cliente/1/10").with(asUsuario()))
+        mockMvc.perform(post("/api/etiquetas/cliente/1/10").with(asClienteWithId(1)))
                 .andExpect(status().isConflict());
+    }
+
+    @Test
+    void assignToCliente_fromDifferentCliente_returnsForbidden() throws Exception {
+        mockMvc.perform(post("/api/etiquetas/cliente/1/10").with(asClienteWithId(2)))
+                .andExpect(status().isForbidden());
     }
 
     // ================================================================== //
@@ -340,7 +356,7 @@ class EtiquetaControllerTest extends BaseControllerTest {
 
     @Test
     void removeFromCliente_valid_returnsOkWithNoData() throws Exception {
-        mockMvc.perform(delete("/api/etiquetas/cliente/1/10").with(asUsuario()))
+        mockMvc.perform(delete("/api/etiquetas/cliente/1/10").with(asClienteWithId(1)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data").doesNotExist());
     }
@@ -352,9 +368,15 @@ class EtiquetaControllerTest extends BaseControllerTest {
                 .when(etiquetaService).removeFromCliente(1, 10);
 
         // when & then
-        mockMvc.perform(delete("/api/etiquetas/cliente/1/10").with(asUsuario()))
+        mockMvc.perform(delete("/api/etiquetas/cliente/1/10").with(asClienteWithId(1)))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.error").value("Not Found"));
+    }
+
+    @Test
+    void removeFromCliente_fromDifferentCliente_returnsForbidden() throws Exception {
+        mockMvc.perform(delete("/api/etiquetas/cliente/1/10").with(asClienteWithId(2)))
+                .andExpect(status().isForbidden());
     }
 
     // ================================================================== //
@@ -376,7 +398,7 @@ class EtiquetaControllerTest extends BaseControllerTest {
         response.setNombre("Accesible");
 
         when(etiquetaService.listByEstablecimiento(1)).thenReturn(List.of(wrapper));
-        when(modelMapper.map(etiqueta, EtiquetaResponse.class)).thenReturn(response);
+        when(etiquetaMapper.toDto(etiqueta)).thenReturn(response);
 
         // when & then
         mockMvc.perform(get("/api/etiquetas/establecimiento/1").with(asUsuario()))
@@ -450,7 +472,7 @@ class EtiquetaControllerTest extends BaseControllerTest {
         response.setNombre("Pet Friendly");
 
         when(etiquetaService.listByTipoEstablecimiento(eq(1), any())).thenReturn(page);
-        when(modelMapper.map(any(), eq(EtiquetaResponse.class))).thenReturn(response);
+        when(etiquetaMapper.toDto(any())).thenReturn(response);
 
         // when & then
         mockMvc.perform(get("/api/etiquetas/tipo-establecimiento/1").with(asUsuario()))

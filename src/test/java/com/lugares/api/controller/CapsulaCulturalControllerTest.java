@@ -3,10 +3,11 @@ package com.lugares.api.controller;
 import com.lugares.api.dto.response.CapsulaCulturalResponse;
 import com.lugares.api.entity.CapsulaCultural;
 import com.lugares.api.exception.ResourceNotFoundException;
+import com.lugares.api.mapper.CapsulaCulturalMapper;
 import com.lugares.api.service.CapsulaCulturalService;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.http.MediaType;
 
 import java.time.LocalDateTime;
@@ -26,8 +27,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(CapsulaCulturalController.class)
 class CapsulaCulturalControllerTest extends BaseControllerTest {
 
-    @MockBean
+    @MockitoBean
     private CapsulaCulturalService capsulaCulturalService;
+
+    @MockitoBean
+    private CapsulaCulturalMapper capsulaCulturalMapper;
 
     // ================================================================== //
     //  GET /api/capsulas-culturales                                       //
@@ -47,7 +51,7 @@ class CapsulaCulturalControllerTest extends BaseControllerTest {
         response.setEsVisible(true);
 
         when(capsulaCulturalService.listAll()).thenReturn(List.of(entity1, entity2));
-        when(modelMapper.map(any(), eq(CapsulaCulturalResponse.class))).thenReturn(response);
+        when(capsulaCulturalMapper.toDto(any())).thenReturn(response);
 
         // when & then
         mockMvc.perform(get("/api/capsulas-culturales").with(asUsuario()))
@@ -79,7 +83,7 @@ class CapsulaCulturalControllerTest extends BaseControllerTest {
         response.setEsVisible(true);
 
         when(capsulaCulturalService.getById(1)).thenReturn(entity);
-        when(modelMapper.map(entity, CapsulaCulturalResponse.class)).thenReturn(response);
+        when(capsulaCulturalMapper.toDto(entity)).thenReturn(response);
 
         // when & then
         mockMvc.perform(get("/api/capsulas-culturales/1").with(asUsuario()))
@@ -116,7 +120,7 @@ class CapsulaCulturalControllerTest extends BaseControllerTest {
         response.setTitulo("Nueva Capsula");
 
         when(capsulaCulturalService.create(any())).thenReturn(savedEntity);
-        when(modelMapper.map(savedEntity, CapsulaCulturalResponse.class)).thenReturn(response);
+        when(capsulaCulturalMapper.toDto(savedEntity)).thenReturn(response);
 
         // when & then
         mockMvc.perform(post("/api/capsulas-culturales")
@@ -142,7 +146,7 @@ class CapsulaCulturalControllerTest extends BaseControllerTest {
         response.setId(1);
 
         when(capsulaCulturalService.update(eq(1), any())).thenReturn(updated);
-        when(modelMapper.map(updated, CapsulaCulturalResponse.class)).thenReturn(response);
+        when(capsulaCulturalMapper.toDto(updated)).thenReturn(response);
 
         // when & then
         mockMvc.perform(put("/api/capsulas-culturales/1")

@@ -4,10 +4,11 @@ import com.lugares.api.dto.response.PromocionListResponse;
 import com.lugares.api.dto.response.PromocionResponse;
 import com.lugares.api.entity.Promocion;
 import com.lugares.api.exception.ResourceNotFoundException;
+import com.lugares.api.mapper.PromocionMapper;
 import com.lugares.api.service.PromocionService;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -30,8 +31,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(PromocionController.class)
 class PromocionControllerTest extends BaseControllerTest {
 
-    @MockBean
+    @MockitoBean
     private PromocionService promocionService;
+
+    @MockitoBean
+    private PromocionMapper promocionMapper;
 
     // ================================================================== //
     //  GET /api/promociones/{id}                                          //
@@ -49,7 +53,7 @@ class PromocionControllerTest extends BaseControllerTest {
         response.setNombre("2x1 en pizzas");
 
         when(promocionService.getById(1)).thenReturn(entity);
-        when(modelMapper.map(entity, PromocionResponse.class)).thenReturn(response);
+        when(promocionMapper.toDto(entity)).thenReturn(response);
 
         // when & then
         mockMvc.perform(get("/api/promociones/1").with(asUsuario()))
@@ -92,7 +96,7 @@ class PromocionControllerTest extends BaseControllerTest {
         listResp.setNombre("Promo test");
 
         when(promocionService.list(isNull(), any())).thenReturn(page);
-        when(modelMapper.map(any(), eq(PromocionListResponse.class))).thenReturn(listResp);
+        when(promocionMapper.toListDto(any())).thenReturn(listResp);
 
         // when & then
         mockMvc.perform(get("/api/promociones").with(asUsuario()))
@@ -116,7 +120,7 @@ class PromocionControllerTest extends BaseControllerTest {
         response.setNombre("Promo local");
 
         when(promocionService.listByEstablecimiento(1)).thenReturn(List.of(p1));
-        when(modelMapper.map(any(), eq(PromocionResponse.class))).thenReturn(response);
+        when(promocionMapper.toDto(any())).thenReturn(response);
 
         // when & then
         mockMvc.perform(get("/api/promociones/establecimiento/1").with(asUsuario()))
@@ -142,7 +146,7 @@ class PromocionControllerTest extends BaseControllerTest {
 
     @Test
     void create_validRequest_returnsCreated() throws Exception {
-        // given — mapRequestToEntity calls modelMapper.map(request, Promocion.class) first
+        // given
         Promocion entity = new Promocion();
         entity.setId(0);
 
@@ -155,9 +159,9 @@ class PromocionControllerTest extends BaseControllerTest {
         response.setNombre("Promo nueva");
         response.setCodigoValidacion("ABCD1234");
 
-        when(modelMapper.map(any(), eq(Promocion.class))).thenReturn(entity);
+        when(promocionMapper.toEntity(any())).thenReturn(entity);
         when(promocionService.create(any())).thenReturn(saved);
-        when(modelMapper.map(saved, PromocionResponse.class)).thenReturn(response);
+        when(promocionMapper.toDto(saved)).thenReturn(response);
 
         // when & then
         mockMvc.perform(post("/api/promociones")
@@ -223,9 +227,9 @@ class PromocionControllerTest extends BaseControllerTest {
         response.setId(1);
         response.setNombre("Promo actualizada");
 
-        when(modelMapper.map(any(), eq(Promocion.class))).thenReturn(entity);
+        when(promocionMapper.toEntity(any())).thenReturn(entity);
         when(promocionService.update(eq(1), any())).thenReturn(updated);
-        when(modelMapper.map(updated, PromocionResponse.class)).thenReturn(response);
+        when(promocionMapper.toDto(updated)).thenReturn(response);
 
         // when & then
         mockMvc.perform(put("/api/promociones/1")
@@ -240,7 +244,7 @@ class PromocionControllerTest extends BaseControllerTest {
     void update_nonExistentId_returnsNotFound() throws Exception {
         // given
         Promocion entity = new Promocion();
-        when(modelMapper.map(any(), eq(Promocion.class))).thenReturn(entity);
+        when(promocionMapper.toEntity(any())).thenReturn(entity);
         when(promocionService.update(eq(999), any()))
                 .thenThrow(new ResourceNotFoundException("Promocion", "id", 999));
 

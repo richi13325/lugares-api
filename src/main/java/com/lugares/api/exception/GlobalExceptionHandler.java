@@ -145,6 +145,19 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(error);
     }
 
+    // 502 — Error de almacenamiento externo (Supabase)
+    @ExceptionHandler(StorageException.class)
+    public ResponseEntity<ApiError> handleStorage(StorageException ex, HttpServletRequest request) {
+        log.error("Error de almacenamiento: {}", ex.getMessage());
+        ApiError error = new ApiError(
+                HttpStatus.BAD_GATEWAY.value(),
+                "Storage Error",
+                ex.getMessage(),
+                request.getRequestURI()
+        );
+        return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(error);
+    }
+
     // 500 — Fallback general
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiError> handleGeneral(Exception ex, HttpServletRequest request) {

@@ -36,10 +36,12 @@ public class CapsulaCulturalService {
 
     @Transactional
     public CapsulaCultural update(Integer id, CapsulaCultural datosActualizados, MultipartFile file) {
-        if (!capsulaCulturalRepository.existsById(id)) {
-            throw new ResourceNotFoundException("CapsulaCultural", "id", id);
-        }
+        CapsulaCultural existing = capsulaCulturalRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("CapsulaCultural", "id", id));
         if (file != null && !file.isEmpty()) {
+            if (existing.getImagen() != null) {
+                storageService.deleteFile(existing.getImagen());
+            }
             datosActualizados.setImagen(storageService.uploadFile(file, "capsulas"));
         }
         datosActualizados.setId(id);

@@ -71,6 +71,9 @@ public class ClienteService {
             cliente.setTelefono(datosActualizados.getTelefono());
         }
         if (file != null && !file.isEmpty()) {
+            if (cliente.getImagenPerfil() != null) {
+                storageService.deleteFile(cliente.getImagenPerfil());
+            }
             cliente.setImagenPerfil(storageService.uploadFile(file, "perfiles"));
         }
         if (datosActualizados.getFechaNacimiento() != null) {

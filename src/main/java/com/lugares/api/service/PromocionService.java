@@ -52,10 +52,12 @@ public class PromocionService {
 
     @Transactional
     public Promocion update(Integer id, Promocion datosActualizados, MultipartFile file) {
-        if (!promocionRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Promocion", "id", id);
-        }
+        Promocion existing = promocionRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Promocion", "id", id));
         if (file != null && !file.isEmpty()) {
+            if (existing.getImagen() != null) {
+                storageService.deleteFile(existing.getImagen());
+            }
             datosActualizados.setImagen(storageService.uploadFile(file, "promociones"));
         }
         validarEstructura(datosActualizados);

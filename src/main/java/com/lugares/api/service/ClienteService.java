@@ -12,6 +12,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 @Service
 @RequiredArgsConstructor
@@ -20,6 +21,7 @@ public class ClienteService {
     private final ClienteRepository clienteRepository;
     private final SuscripcionRepository suscripcionRepository;
     private final PasswordEncoder passwordEncoder;
+    private final StorageService storageService;
 
     public Cliente getById(Integer id) {
         return clienteRepository.findByIdWithSuscripcion(id)
@@ -37,7 +39,7 @@ public class ClienteService {
                     throw new DuplicateResourceException("Cliente", "correoElectronico", cliente.getCorreoElectronico());
                 });
 
-        cliente.setContrasenia(passwordEncoder.encode(cliente.getContrasenia()));
+        cliente.setContrasenia(passwordEncoder.encode(cliente.getPassword()));
 
         if (cliente.getSuscripcion() != null && cliente.getSuscripcion().getId() != null) {
             Suscripcion suscripcion = suscripcionRepository.findById(cliente.getSuscripcion().getId())
@@ -49,7 +51,7 @@ public class ClienteService {
     }
 
     @Transactional
-    public Cliente update(Integer id, Cliente datosActualizados) {
+    public Cliente update(Integer id, Cliente datosActualizados, MultipartFile file) {
         Cliente cliente = clienteRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Cliente", "id", id));
 
@@ -68,8 +70,8 @@ public class ClienteService {
         if (datosActualizados.getTelefono() != null) {
             cliente.setTelefono(datosActualizados.getTelefono());
         }
-        if (datosActualizados.getImagenPerfil() != null) {
-            cliente.setImagenPerfil(datosActualizados.getImagenPerfil());
+        if (file != null && !file.isEmpty()) {
+            cliente.setImagenPerfil(storageService.uploadFile(file, "perfiles"));
         }
         if (datosActualizados.getFechaNacimiento() != null) {
             cliente.setFechaNacimiento(datosActualizados.getFechaNacimiento());

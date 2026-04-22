@@ -68,8 +68,10 @@ public class PromocionService {
 
     @Transactional
     public void delete(Integer id) {
-        if (!promocionRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Promocion", "id", id);
+        Promocion existing = promocionRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Promocion", "id", id));
+        if (existing.getImagen() != null) {
+            storageService.deleteFile(existing.getImagen());
         }
         promocionRepository.deleteById(id);
     }

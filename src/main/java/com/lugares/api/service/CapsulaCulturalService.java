@@ -50,8 +50,10 @@ public class CapsulaCulturalService {
 
     @Transactional
     public void delete(Integer id) {
-        if (!capsulaCulturalRepository.existsById(id)) {
-            throw new ResourceNotFoundException("CapsulaCultural", "id", id);
+        CapsulaCultural existing = capsulaCulturalRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("CapsulaCultural", "id", id));
+        if (existing.getImagen() != null) {
+            storageService.deleteFile(existing.getImagen());
         }
         capsulaCulturalRepository.deleteById(id);
     }

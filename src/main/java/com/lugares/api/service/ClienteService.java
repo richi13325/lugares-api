@@ -90,8 +90,10 @@ public class ClienteService {
 
     @Transactional
     public void delete(Integer id) {
-        if (!clienteRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Cliente", "id", id);
+        Cliente existing = clienteRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Cliente", "id", id));
+        if (existing.getImagenPerfil() != null) {
+            storageService.deleteFile(existing.getImagenPerfil());
         }
         clienteRepository.deleteById(id);
     }

@@ -7,6 +7,7 @@ import com.lugares.api.entity.Establecimiento;
 import com.lugares.api.entity.Promocion;
 import com.lugares.api.entity.Suscripcion;
 import com.lugares.api.entity.enums.TipoPromocion;
+import com.lugares.api.service.StorageService;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Component;
@@ -16,6 +17,7 @@ import org.springframework.stereotype.Component;
 public class PromocionMapper {
 
     private final ModelMapper modelMapper;
+    private final StorageService storageService;
 
     public Promocion toEntity(PromocionRequest request) {
         Promocion entity = modelMapper.map(request, Promocion.class);
@@ -44,6 +46,7 @@ public class PromocionMapper {
         if (entity.getEstablecimiento() != null) {
             dto.setEstablecimientoNombre(entity.getEstablecimiento().getNombre());
         }
+        dto.setImagen(storageService.getPublicUrl(entity.getImagen()));
         return dto;
     }
 
@@ -55,6 +58,7 @@ public class PromocionMapper {
         if (entity.getEstablecimiento() != null) {
             dto.setEstablecimientoNombre(entity.getEstablecimiento().getNombre());
         }
+        dto.setImagen(storageService.getPublicUrl(entity.getImagen()));
         return dto;
     }
 }

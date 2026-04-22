@@ -16,4 +16,6 @@ public class PromocionListResponse {
     private String descripcion;
     private LocalDate fechaInicio;
     private LocalDate fechaFin;
+
+    private String imagen;
 }

@@ -25,8 +25,6 @@ public class PromocionRequest {
 
     private String descripcion;
 
-    private byte[] imagen;
-
     private LocalDate fechaInicio;
 
     private LocalDate fechaFin;

@@ -50,8 +50,8 @@ public class Promocion {
     @Column(name = "fld_descripcion")
     private String descripcion;
 
-    @Column(name = "fld_imagen")
-    private byte[] imagen;
+    @Column(name = "fld_imagen", length = 500)
+    private String imagen;
 
     @Column(name = "fld_fecha_inicio")
     private LocalDate fechaInicio;

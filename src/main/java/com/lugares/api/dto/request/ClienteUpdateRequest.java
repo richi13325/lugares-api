@@ -27,6 +27,4 @@ public class ClienteUpdateRequest {
     private String contrasenia;
 
     private LocalDate fechaNacimiento;
-
-    private String imagenPerfil;
 }

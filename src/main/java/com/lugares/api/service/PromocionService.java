@@ -14,6 +14,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -24,6 +25,7 @@ public class PromocionService {
     private final PromocionRepository promocionRepository;
     private final EstablecimientoRepository establecimientoRepository;
     private final SuscripcionRepository suscripcionRepository;
+    private final StorageService storageService;
 
     public Promocion getById(Integer id) {
         return promocionRepository.findByIdWithRelations(id)
@@ -39,16 +41,24 @@ public class PromocionService {
     }
 
     @Transactional
-    public Promocion create(Promocion promocion) {
+    public Promocion create(Promocion promocion, MultipartFile file) {
+        if (file != null && !file.isEmpty()) {
+            promocion.setImagen(storageService.uploadFile(file, "promociones"));
+        }
         validarEstructura(promocion);
         resolveRelations(promocion);
         return promocionRepository.save(promocion);
     }
 
     @Transactional
-    public Promocion update(Integer id, Promocion datosActualizados) {
-        if (!promocionRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Promocion", "id", id);
+    public Promocion update(Integer id, Promocion datosActualizados, MultipartFile file) {
+        Promocion existing = promocionRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Promocion", "id", id));
+        if (file != null && !file.isEmpty()) {
+            if (existing.getImagen() != null) {
+                storageService.deleteFile(existing.getImagen());
+            }
+            datosActualizados.setImagen(storageService.uploadFile(file, "promociones"));
         }
         validarEstructura(datosActualizados);
         resolveRelations(datosActualizados);
@@ -58,8 +68,10 @@ public class PromocionService {
 
     @Transactional
     public void delete(Integer id) {
-        if (!promocionRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Promocion", "id", id);
+        Promocion existing = promocionRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Promocion", "id", id));
+        if (existing.getImagen() != null) {
+            storageService.deleteFile(existing.getImagen());
         }
         promocionRepository.deleteById(id);
     }

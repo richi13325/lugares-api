@@ -11,16 +11,18 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/clientes")
@@ -46,13 +48,14 @@ public class ClienteController {
         return ResponseEntity.ok(ApiResponse.success(page));
     }
 
-    @PutMapping("/{id}")
+    @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasRole('CLIENTE') and #id == authentication.principal.id")
     public ResponseEntity<ApiResponse<ClienteResponse>> update(
             @PathVariable Integer id,
-            @Valid @RequestBody ClienteUpdateRequest request) {
+            @RequestPart("data") @Valid ClienteUpdateRequest request,
+            @RequestPart(value = "imagen", required = false) MultipartFile imagen) {
         Cliente entity = clienteMapper.toEntity(request);
-        Cliente updated = clienteService.update(id, entity);
+        Cliente updated = clienteService.update(id, entity, imagen);
         return ResponseEntity.ok(ApiResponse.success(clienteMapper.toDto(updated)));
     }
 

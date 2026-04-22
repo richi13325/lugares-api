@@ -6,6 +6,7 @@ import com.lugares.api.repository.CapsulaCulturalRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -14,6 +15,7 @@ import java.util.List;
 public class CapsulaCulturalService {
 
     private final CapsulaCulturalRepository capsulaCulturalRepository;
+    private final StorageService storageService;
 
     public List<CapsulaCultural> listAll() {
         return capsulaCulturalRepository.findAll();
@@ -25,14 +27,22 @@ public class CapsulaCulturalService {
     }
 
     @Transactional
-    public CapsulaCultural create(CapsulaCultural capsula) {
+    public CapsulaCultural create(CapsulaCultural capsula, MultipartFile file) {
+        if (file != null && !file.isEmpty()) {
+            capsula.setImagen(storageService.uploadFile(file, "capsulas"));
+        }
         return capsulaCulturalRepository.save(capsula);
     }
 
     @Transactional
-    public CapsulaCultural update(Integer id, CapsulaCultural datosActualizados) {
-        if (!capsulaCulturalRepository.existsById(id)) {
-            throw new ResourceNotFoundException("CapsulaCultural", "id", id);
+    public CapsulaCultural update(Integer id, CapsulaCultural datosActualizados, MultipartFile file) {
+        CapsulaCultural existing = capsulaCulturalRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("CapsulaCultural", "id", id));
+        if (file != null && !file.isEmpty()) {
+            if (existing.getImagen() != null) {
+                storageService.deleteFile(existing.getImagen());
+            }
+            datosActualizados.setImagen(storageService.uploadFile(file, "capsulas"));
         }
         datosActualizados.setId(id);
         return capsulaCulturalRepository.save(datosActualizados);
@@ -40,8 +50,10 @@ public class CapsulaCulturalService {
 
     @Transactional
     public void delete(Integer id) {
-        if (!capsulaCulturalRepository.existsById(id)) {
-            throw new ResourceNotFoundException("CapsulaCultural", "id", id);
+        CapsulaCultural existing = capsulaCulturalRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("CapsulaCultural", "id", id));
+        if (existing.getImagen() != null) {
+            storageService.deleteFile(existing.getImagen());
         }
         capsulaCulturalRepository.deleteById(id);
     }

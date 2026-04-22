@@ -21,4 +21,6 @@ public class PromocionResponse {
     private String tipoPromocion;
     private Set<DayOfWeek> diasDisponibles;
     private String codigoValidacion;
+
+    private String imagen;
 }

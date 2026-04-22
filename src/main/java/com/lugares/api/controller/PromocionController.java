@@ -12,16 +12,18 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -57,19 +59,22 @@ public class PromocionController {
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
-    @PostMapping
-    public ResponseEntity<ApiResponse<PromocionResponse>> create(@Valid @RequestBody PromocionRequest request) {
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ApiResponse<PromocionResponse>> create(
+            @RequestPart("data") @Valid PromocionRequest request,
+            @RequestPart(value = "imagen", required = false) MultipartFile imagen) {
         Promocion entity = promocionMapper.toEntity(request);
-        Promocion saved = promocionService.create(entity);
+        Promocion saved = promocionService.create(entity, imagen);
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.created(promocionMapper.toDto(saved)));
     }
 
-    @PutMapping("/{id}")
+    @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<PromocionResponse>> update(
             @PathVariable Integer id,
-            @Valid @RequestBody PromocionRequest request) {
+            @RequestPart("data") @Valid PromocionRequest request,
+            @RequestPart(value = "imagen", required = false) MultipartFile imagen) {
         Promocion entity = promocionMapper.toEntity(request);
-        Promocion updated = promocionService.update(id, entity);
+        Promocion updated = promocionService.update(id, entity, imagen);
         return ResponseEntity.ok(ApiResponse.success(promocionMapper.toDto(updated)));
     }
 

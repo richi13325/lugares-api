@@ -49,4 +49,12 @@ public class ComentarioService {
         }
         comentarioRepository.deleteById(id);
     }
+
+    @Transactional(readOnly = true)
+    public boolean isOwner(Integer id, Integer principalId) {
+        if (id == null || principalId == null) return false;
+        return comentarioRepository.findById(id)
+                .map(c -> c.getCliente() != null && principalId.equals(c.getCliente().getId()))
+                .orElse(false);
+    }
 }

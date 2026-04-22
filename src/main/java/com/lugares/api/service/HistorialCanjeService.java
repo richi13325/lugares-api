@@ -58,4 +58,12 @@ public class HistorialCanjeService {
         }
         historialCanjeRepository.deleteById(id);
     }
+
+    @Transactional(readOnly = true)
+    public boolean isOwner(Integer id, Integer principalId) {
+        if (id == null || principalId == null) return false;
+        return historialCanjeRepository.findById(id)
+                .map(h -> h.getCliente() != null && principalId.equals(h.getCliente().getId()))
+                .orElse(false);
+    }
 }

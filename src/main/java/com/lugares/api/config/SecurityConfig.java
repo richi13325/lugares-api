@@ -57,7 +57,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/usuarios/**", "/api/empresas/**", "/api/marcas/**").hasRole("USUARIO")
                         .requestMatchers("/api/notificaciones/**").hasRole("USUARIO")
                         .requestMatchers("/api/etiquetas/admin").hasRole("USUARIO")
-                        .requestMatchers(HttpMethod.DELETE, "/api/comentarios/**").hasRole("USUARIO")
+                        .requestMatchers(HttpMethod.DELETE, "/api/comentarios/**").authenticated()
 
                         .requestMatchers(HttpMethod.POST,
                                 "/api/establecimientos",

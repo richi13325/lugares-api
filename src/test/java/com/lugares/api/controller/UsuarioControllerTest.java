@@ -289,4 +289,23 @@ class UsuarioControllerTest extends BaseControllerTest {
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.error").value("Not Found"));
     }
+
+    // ================================================================== //
+    //  PUT & DELETE /api/usuarios/{id} — role enforcement                 //
+    // ================================================================== //
+
+    @Test
+    void update_whenCliente_thenForbidden() throws Exception {
+        mockMvc.perform(put("/api/usuarios/1")
+                        .with(asClienteWithId(1))
+                        .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                        .content("{\"nombre\":\"Intruder\",\"correoElectronico\":\"x@test.com\",\"contrasenia\":\"pass123\"}"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void delete_whenCliente_thenForbidden() throws Exception {
+        mockMvc.perform(delete("/api/usuarios/1").with(asClienteWithId(1)))
+                .andExpect(status().isForbidden());
+    }
 }

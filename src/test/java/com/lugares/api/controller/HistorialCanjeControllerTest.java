@@ -25,7 +25,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(HistorialCanjeController.class)
 class HistorialCanjeControllerTest extends BaseControllerTest {
 
-    @MockitoBean
+    @MockitoBean(name = "historialCanjeService")
     private HistorialCanjeService historialCanjeService;
 
     @MockitoBean
@@ -200,5 +200,34 @@ class HistorialCanjeControllerTest extends BaseControllerTest {
         mockMvc.perform(delete("/api/historial-canjes/999").with(asUsuario()))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.error").value("Not Found"));
+    }
+
+    // ================================================================== //
+    //  DELETE /api/historial-canjes/{id} — ownership                     //
+    // ================================================================== //
+
+    @Test
+    void delete_whenClienteNotOwner_thenForbidden() throws Exception {
+        // given — cliente 2 tries to delete canje 1 owned by cliente 1
+        when(historialCanjeService.isOwner(1, 2)).thenReturn(false);
+
+        mockMvc.perform(delete("/api/historial-canjes/1").with(asClienteWithId(2)))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void delete_whenClienteOwner_thenOk() throws Exception {
+        // given — cliente 1 deletes its own canje 1
+        when(historialCanjeService.isOwner(1, 1)).thenReturn(true);
+
+        mockMvc.perform(delete("/api/historial-canjes/1").with(asClienteWithId(1)))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void delete_whenUsuario_thenOk() throws Exception {
+        // USUARIO branch short-circuits — isOwner is never called
+        mockMvc.perform(delete("/api/historial-canjes/1").with(asUsuario()))
+                .andExpect(status().isOk());
     }
 }

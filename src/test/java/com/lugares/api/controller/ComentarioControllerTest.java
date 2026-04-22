@@ -25,7 +25,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(ComentarioController.class)
 class ComentarioControllerTest extends BaseControllerTest {
 
-    @MockitoBean
+    @MockitoBean(name = "comentarioService")
     private ComentarioService comentarioService;
 
     @MockitoBean
@@ -146,5 +146,34 @@ class ComentarioControllerTest extends BaseControllerTest {
         mockMvc.perform(delete("/api/comentarios/999").with(asUsuario()))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.error").value("Not Found"));
+    }
+
+    // ================================================================== //
+    //  DELETE /api/comentarios/{id} — ownership                          //
+    // ================================================================== //
+
+    @Test
+    void delete_whenClienteNotOwner_thenForbidden() throws Exception {
+        // given — cliente 2 tries to delete comentario 1 owned by cliente 1
+        when(comentarioService.isOwner(1, 2)).thenReturn(false);
+
+        mockMvc.perform(delete("/api/comentarios/1").with(asClienteWithId(2)))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void delete_whenClienteOwner_thenOk() throws Exception {
+        // given — cliente 1 deletes its own comentario 1
+        when(comentarioService.isOwner(1, 1)).thenReturn(true);
+
+        mockMvc.perform(delete("/api/comentarios/1").with(asClienteWithId(1)))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void delete_whenUsuario_thenOk() throws Exception {
+        // USUARIO branch short-circuits — isOwner is never called
+        mockMvc.perform(delete("/api/comentarios/1").with(asUsuario()))
+                .andExpect(status().isOk());
     }
 }

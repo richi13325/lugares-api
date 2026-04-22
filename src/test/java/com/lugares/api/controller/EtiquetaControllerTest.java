@@ -428,6 +428,12 @@ class EtiquetaControllerTest extends BaseControllerTest {
                 .andExpect(status().isConflict());
     }
 
+    @Test
+    void assignToEstablecimiento_asCliente_returnsForbidden() throws Exception {
+        mockMvc.perform(post("/api/etiquetas/establecimiento/1/10").with(asClienteWithId(1)))
+                .andExpect(status().isForbidden());
+    }
+
     // ================================================================== //
     //  DELETE /api/etiquetas/establecimiento/{establecimientoId}/{etiquetaId}//
     // ================================================================== //
@@ -449,6 +455,12 @@ class EtiquetaControllerTest extends BaseControllerTest {
         mockMvc.perform(delete("/api/etiquetas/establecimiento/1/10").with(asUsuario()))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.error").value("Not Found"));
+    }
+
+    @Test
+    void removeFromEstablecimiento_asCliente_returnsForbidden() throws Exception {
+        mockMvc.perform(delete("/api/etiquetas/establecimiento/1/10").with(asClienteWithId(1)))
+                .andExpect(status().isForbidden());
     }
 
     // ================================================================== //

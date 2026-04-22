@@ -253,4 +253,26 @@ class ClienteControllerTest extends BaseControllerTest {
         mockMvc.perform(get("/api/clientes/1").with(asClienteWithId(2)))
                 .andExpect(status().isForbidden());
     }
+
+    // ================================================================== //
+    //  DELETE /api/clientes/{id} — ownership                              //
+    // ================================================================== //
+
+    @Test
+    void delete_whenOtherCliente_thenForbidden() throws Exception {
+        mockMvc.perform(delete("/api/clientes/1").with(asClienteWithId(2)))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void delete_whenSelf_thenOk() throws Exception {
+        mockMvc.perform(delete("/api/clientes/1").with(asClienteWithId(1)))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void delete_whenUsuario_thenOk() throws Exception {
+        mockMvc.perform(delete("/api/clientes/1").with(asUsuarioWithId(99)))
+                .andExpect(status().isOk());
+    }
 }

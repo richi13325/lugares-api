@@ -145,4 +145,29 @@ class NotificacionControllerTest extends BaseControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error").value("Bad Request"));
     }
+
+    // ================================================================== //
+    //  POST /api/notificaciones/cliente/{id} — Firebase uninitialized (P0 #10) //
+    // ================================================================== //
+
+    @Test
+    void enviarACliente_firebaseNotInitialized_returnsBadGateway() throws Exception {
+        // given — FirebaseMessaging.getInstance() throws IllegalStateException with "Firebase" in message
+        // This happens when Firebase Admin SDK is not properly initialized/configured
+        doThrow(new IllegalStateException("Firebase App named '[DEFAULT]' already exists but was not configured with settings. Call setActionCodeSettings() before using any Firebase service."))
+                .when(notificacionService).enviarACliente(anyLong(), anyString(), anyString());
+
+        NotificacionRequest request = new NotificacionRequest();
+        request.setTitulo("Test");
+        request.setMensaje("Test mensaje");
+
+        // when & then — IllegalStateException (message contains "Firebase") → GlobalExceptionHandler → 502 "Firebase Not Initialized"
+        mockMvc.perform(post("/api/notificaciones/cliente/1")
+                        .with(asUsuario())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadGateway())
+                .andExpect(jsonPath("$.error").value("Firebase Not Initialized"))
+                .andExpect(jsonPath("$.message").value("El servicio de notificaciones push no esta configurado. Contacte al administrador."));
+    }
 }

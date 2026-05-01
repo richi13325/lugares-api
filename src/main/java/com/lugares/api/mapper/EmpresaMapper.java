@@ -1,5 +1,6 @@
 package com.lugares.api.mapper;
 
+import com.lugares.api.dto.request.EmpresaRequest;
 import com.lugares.api.dto.response.EmpresaResponse;
 import com.lugares.api.entity.Empresa;
 import lombok.RequiredArgsConstructor;
@@ -14,5 +15,13 @@ public class EmpresaMapper {
 
     public EmpresaResponse toDto(Empresa entity) {
         return modelMapper.map(entity, EmpresaResponse.class);
+    }
+
+    public Empresa toEntity(EmpresaRequest request) {
+        return modelMapper.map(request, Empresa.class);
+    }
+
+    public void update(EmpresaRequest source, Empresa target) {
+        modelMapper.map(source, target);
     }
 }

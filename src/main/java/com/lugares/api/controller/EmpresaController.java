@@ -1,12 +1,13 @@
 package com.lugares.api.controller;
 
 import com.lugares.api.common.ApiResponse;
+import com.lugares.api.dto.request.EmpresaRequest;
 import com.lugares.api.dto.response.EmpresaResponse;
-import com.lugares.api.entity.Empresa;
 import com.lugares.api.mapper.EmpresaMapper;
 import com.lugares.api.service.EmpresaService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -57,8 +58,8 @@ public class EmpresaController {
         description = "Registra una nueva empresa en el sistema. Requiere rol USUARIO."
     )
     @PostMapping
-    public ResponseEntity<ApiResponse<EmpresaResponse>> create(@RequestBody Empresa empresa) {
-        Empresa saved = empresaService.create(empresa);
+    public ResponseEntity<ApiResponse<EmpresaResponse>> create(@Valid @RequestBody EmpresaRequest request) {
+        var saved = empresaService.create(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.created(empresaMapper.toDto(saved)));
     }
 
@@ -67,8 +68,8 @@ public class EmpresaController {
         description = "Actualiza los datos de una empresa existente. Requiere rol USUARIO."
     )
     @PutMapping("/{id}")
-    public ResponseEntity<ApiResponse<EmpresaResponse>> update(@PathVariable Integer id, @RequestBody Empresa empresa) {
-        Empresa updated = empresaService.update(id, empresa);
+    public ResponseEntity<ApiResponse<EmpresaResponse>> update(@PathVariable Integer id, @Valid @RequestBody EmpresaRequest request) {
+        var updated = empresaService.update(id, request);
         return ResponseEntity.ok(ApiResponse.success(empresaMapper.toDto(updated)));
     }
 

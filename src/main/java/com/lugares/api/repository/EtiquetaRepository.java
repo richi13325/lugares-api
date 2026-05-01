@@ -18,4 +18,6 @@ public interface EtiquetaRepository extends JpaRepository<Etiqueta, Integer> {
     Page<Etiqueta> findAllAdmin(@Param("nombre") String nombre, Pageable pageable);
 
     List<Etiqueta> findByEsVisibleTrue();
+
+    long countByCategoriaId(Integer categoriaId);
 }

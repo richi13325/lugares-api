@@ -1,12 +1,13 @@
 package com.lugares.api.controller;
 
 import com.lugares.api.common.ApiResponse;
+import com.lugares.api.dto.request.CategoriaEtiquetaRequest;
 import com.lugares.api.dto.response.CategoriaEtiquetaResponse;
-import com.lugares.api.entity.CategoriaEtiqueta;
 import com.lugares.api.mapper.CategoriaEtiquetaMapper;
 import com.lugares.api.service.CategoriaEtiquetaService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -57,8 +58,8 @@ public class CategoriaEtiquetaController {
         description = "Crea una nueva categoría para agrupar etiquetas. Requiere rol USUARIO."
     )
     @PostMapping
-    public ResponseEntity<ApiResponse<CategoriaEtiquetaResponse>> create(@RequestBody CategoriaEtiqueta categoria) {
-        CategoriaEtiqueta saved = categoriaEtiquetaService.create(categoria);
+    public ResponseEntity<ApiResponse<CategoriaEtiquetaResponse>> create(@Valid @RequestBody CategoriaEtiquetaRequest request) {
+        var saved = categoriaEtiquetaService.create(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.created(categoriaEtiquetaMapper.toDto(saved)));
     }
 
@@ -67,8 +68,8 @@ public class CategoriaEtiquetaController {
         description = "Actualiza el nombre o datos de una categoría de etiqueta existente. Requiere rol USUARIO."
     )
     @PutMapping("/{id}")
-    public ResponseEntity<ApiResponse<CategoriaEtiquetaResponse>> update(@PathVariable Integer id, @RequestBody CategoriaEtiqueta categoria) {
-        CategoriaEtiqueta updated = categoriaEtiquetaService.update(id, categoria);
+    public ResponseEntity<ApiResponse<CategoriaEtiquetaResponse>> update(@PathVariable Integer id, @Valid @RequestBody CategoriaEtiquetaRequest request) {
+        var updated = categoriaEtiquetaService.update(id, request);
         return ResponseEntity.ok(ApiResponse.success(categoriaEtiquetaMapper.toDto(updated)));
     }
 

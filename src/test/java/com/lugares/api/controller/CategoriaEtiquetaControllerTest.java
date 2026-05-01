@@ -2,6 +2,7 @@ package com.lugares.api.controller;
 
 import com.lugares.api.dto.response.CategoriaEtiquetaResponse;
 import com.lugares.api.entity.CategoriaEtiqueta;
+import com.lugares.api.exception.BusinessRuleException;
 import com.lugares.api.exception.ResourceNotFoundException;
 import com.lugares.api.mapper.CategoriaEtiquetaMapper;
 import com.lugares.api.service.CategoriaEtiquetaService;
@@ -190,5 +191,26 @@ class CategoriaEtiquetaControllerTest extends BaseControllerTest {
         mockMvc.perform(delete("/api/categorias-etiqueta/999").with(asUsuario()))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.error").value("Not Found"));
+    }
+
+    // ================================================================== //
+    //  DELETE /api/categorias-etiqueta/{id} — FK guard branch (P0 #7)  //
+    // ================================================================== //
+
+    @Test
+    void delete_categoryInUse_returnsUnprocessableEntity() throws Exception {
+        // given — category has etiquetas, FK guard in service throws BusinessRuleException
+        doThrow(new BusinessRuleException(
+                "No se puede eliminar la categoria 'Comida' porque tiene 3 etiqueta(s) asociada(s). " +
+                "Elimine o reasigne las etiquetas primero."))
+                .when(categoriaEtiquetaService).delete(1);
+
+        // when & then — BusinessRuleException → 422
+        mockMvc.perform(delete("/api/categorias-etiqueta/1").with(asUsuario()))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.error").value("Unprocessable Entity"))
+                .andExpect(jsonPath("$.message").value(
+                        "No se puede eliminar la categoria 'Comida' porque tiene 3 etiqueta(s) asociada(s). " +
+                        "Elimine o reasigne las etiquetas primero."));
     }
 }

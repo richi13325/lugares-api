@@ -13,6 +13,13 @@ public class CalificacionMapper {
     private final ModelMapper modelMapper;
 
     public CalificacionResponse toDto(Calificacion entity) {
-        return modelMapper.map(entity, CalificacionResponse.class);
+        CalificacionResponse dto = modelMapper.map(entity, CalificacionResponse.class);
+        if (entity.getCliente() != null) {
+            dto.setIdCliente(entity.getCliente().getId());
+        }
+        if (entity.getEstablecimiento() != null) {
+            dto.setIdEstablecimiento(entity.getEstablecimiento().getId());
+        }
+        return dto;
     }
 }

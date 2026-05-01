@@ -1,12 +1,15 @@
 package com.lugares.api.service;
 
+import com.lugares.api.dto.request.EmpresaRequest;
 import com.lugares.api.entity.Empresa;
 import com.lugares.api.exception.ResourceNotFoundException;
+import com.lugares.api.mapper.EmpresaMapper;
 import com.lugares.api.repository.EmpresaRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Service
@@ -14,6 +17,7 @@ import java.util.List;
 public class EmpresaService {
 
     private final EmpresaRepository empresaRepository;
+    private final EmpresaMapper empresaMapper;
 
     public List<Empresa> listAll() {
         return empresaRepository.findAll();
@@ -25,17 +29,20 @@ public class EmpresaService {
     }
 
     @Transactional
-    public Empresa create(Empresa empresa) {
-        return empresaRepository.save(empresa);
+    public Empresa create(EmpresaRequest request) {
+        Empresa entity = empresaMapper.toEntity(request);
+        entity.setFechaCreacion(LocalDate.now());
+        entity.setFechaUltimaModificacion(LocalDate.now());
+        return empresaRepository.save(entity);
     }
 
     @Transactional
-    public Empresa update(Integer id, Empresa datosActualizados) {
-        if (!empresaRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Empresa", "id", id);
-        }
-        datosActualizados.setId(id);
-        return empresaRepository.save(datosActualizados);
+    public Empresa update(Integer id, EmpresaRequest request) {
+        Empresa existente = empresaRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Empresa", "id", id));
+        existente.setFechaUltimaModificacion(LocalDate.now());
+        empresaMapper.update(request, existente);
+        return empresaRepository.save(existente);
     }
 
     @Transactional

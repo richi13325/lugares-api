@@ -145,6 +145,36 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(error);
     }
 
+    // 502 — Firebase no inicializado / configuracion
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<ApiError> handleIllegalState(IllegalStateException ex, HttpServletRequest request) {
+        String message = ex.getMessage();
+        if (message != null && message.contains("Firebase")) {
+            log.error("Firebase no inicializado: {}", ex.getMessage());
+            ApiError error = new ApiError(
+                    HttpStatus.BAD_GATEWAY.value(),
+                    "Firebase Not Initialized",
+                    "El servicio de notificaciones push no esta configurado. Contacte al administrador.",
+                    request.getRequestURI()
+            );
+            return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(error);
+        }
+        throw ex; // Let other IllegalStateException propagate to the general handler
+    }
+
+    // 400 — Argumento invalido (validarImagen, reglas de negocio simples)
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ApiError> handleIllegalArgument(IllegalArgumentException ex, HttpServletRequest request) {
+        log.warn("Argumento invalido: {}", ex.getMessage());
+        ApiError error = new ApiError(
+                HttpStatus.BAD_REQUEST.value(),
+                "Bad Request",
+                ex.getMessage(),
+                request.getRequestURI()
+        );
+        return ResponseEntity.badRequest().body(error);
+    }
+
     // 500 — Fallback general
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiError> handleGeneral(Exception ex, HttpServletRequest request) {

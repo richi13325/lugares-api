@@ -1,5 +1,6 @@
 package com.lugares.api.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.lugares.api.dto.response.EstablecimientoDetailResponse;
 import com.lugares.api.dto.response.EstablecimientoListResponse;
 import com.lugares.api.dto.response.EstablecimientoResponse;
@@ -7,13 +8,17 @@ import com.lugares.api.entity.Establecimiento;
 import com.lugares.api.exception.ResourceNotFoundException;
 import com.lugares.api.mapper.EstablecimientoMapper;
 import com.lugares.api.service.EstablecimientoService;
+import com.lugares.api.service.SupabaseStorageService;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.mock.web.MockPart;
 
 import java.util.List;
 
@@ -25,8 +30,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -38,6 +43,9 @@ class EstablecimientoControllerTest extends BaseControllerTest {
 
     @MockitoBean
     private EstablecimientoMapper establecimientoMapper;
+
+    @MockitoBean
+    private SupabaseStorageService storageService;
 
     // ================================================================== //
     //  GET /api/establecimientos/{id}                                     //
@@ -87,6 +95,39 @@ class EstablecimientoControllerTest extends BaseControllerTest {
     void getById_unauthenticated_returnsForbidden() throws Exception {
         mockMvc.perform(get("/api/establecimientos/1"))
                 .andExpect(status().isForbidden());
+    }
+
+    // ================================================================== //
+    //  GET /api/establecimientos/{id} — 4-image scenario (REQ-007)       //
+    // ================================================================== //
+
+    @Test
+    void getById_with4Photos_returnsAll4() throws Exception {
+        // given
+        Establecimiento entity = new Establecimiento();
+        entity.setId(5);
+        entity.setImgRefs("https://sb.io/img1.jpg");
+        entity.setImgRefs2("https://sb.io/img2.jpg");
+        entity.setImgRefs3("https://sb.io/img3.jpg");
+        entity.setImgRefs4("https://sb.io/img4.jpg");
+
+        EstablecimientoDetailResponse response = new EstablecimientoDetailResponse();
+        response.setId(5);
+        response.setImgRefs("https://sb.io/img1.jpg");
+        response.setImgRefs2("https://sb.io/img2.jpg");
+        response.setImgRefs3("https://sb.io/img3.jpg");
+        response.setImgRefs4("https://sb.io/img4.jpg");
+
+        when(establecimientoService.getById(5)).thenReturn(entity);
+        when(establecimientoMapper.toDetailDto(entity)).thenReturn(response);
+
+        // when & then
+        mockMvc.perform(get("/api/establecimientos/5").with(asUsuario()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.imgRefs").value("https://sb.io/img1.jpg"))
+                .andExpect(jsonPath("$.data.imgRefs2").value("https://sb.io/img2.jpg"))
+                .andExpect(jsonPath("$.data.imgRefs3").value("https://sb.io/img3.jpg"))
+                .andExpect(jsonPath("$.data.imgRefs4").value("https://sb.io/img4.jpg"));
     }
 
     // ================================================================== //
@@ -240,11 +281,19 @@ class EstablecimientoControllerTest extends BaseControllerTest {
     }
 
     // ================================================================== //
-    //  POST /api/establecimientos                                         //
+    //  POST /api/establecimientos  (multipart/form-data)                  //
     // ================================================================== //
 
+    private byte[] datosJson(ObjectMapper mapper) throws Exception {
+        return mapper.writeValueAsBytes(
+                mapper.createObjectNode()
+                        .put("idSuscripcion", 1)
+                        .put("idTipoEstablecimiento", 2)
+                        .put("nombre", "Nuevo Local"));
+    }
+
     @Test
-    void create_validRequest_returnsCreated() throws Exception {
+    void create_validRequest_with1Image_returnsCreated() throws Exception {
         // given
         Establecimiento entity = new Establecimiento();
         entity.setId(0);
@@ -253,31 +302,160 @@ class EstablecimientoControllerTest extends BaseControllerTest {
         Establecimiento saved = new Establecimiento();
         saved.setId(10);
         saved.setNombre("Nuevo Local");
+        saved.setImgRefs("https://sb.io/establecimientos/img1.jpg");
 
         EstablecimientoDetailResponse response = new EstablecimientoDetailResponse();
         response.setId(10);
         response.setNombre("Nuevo Local");
+        response.setImgRefs("https://sb.io/establecimientos/img1.jpg");
 
+        when(storageService.uploadFile(any(), eq("establecimientos")))
+                .thenReturn("https://sb.io/establecimientos/img1.jpg");
         when(establecimientoMapper.toEntity(any())).thenReturn(entity);
         when(establecimientoService.create(any())).thenReturn(saved);
         when(establecimientoMapper.toDetailDto(saved)).thenReturn(response);
 
+        MockMultipartFile foto = new MockMultipartFile("foto", "img1.jpg", "image/jpeg", new byte[]{1, 2, 3});
+        MockPart datos = new MockPart("datos", datosJson(objectMapper));
+        datos.getHeaders().setContentType(MediaType.APPLICATION_JSON);
+
         // when & then
-        mockMvc.perform(post("/api/establecimientos")
-                        .with(asUsuario())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"idSuscripcion\":1,\"idTipoEstablecimiento\":2,\"nombre\":\"Nuevo Local\"}"))
+        mockMvc.perform(multipart("/api/establecimientos")
+                        .file(foto)
+                        .part(datos)
+                        .with(asUsuario()))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.message").value("Recurso creado"));
+                .andExpect(jsonPath("$.message").value("Recurso creado"))
+                .andExpect(jsonPath("$.data.imgRefs").value("https://sb.io/establecimientos/img1.jpg"));
+    }
+
+    @Test
+    void create_with2Images_primary_and_secondary_populated() throws Exception {
+        // given
+        Establecimiento saved = new Establecimiento();
+        saved.setId(11);
+        saved.setImgRefs("https://sb.io/establecimientos/img1.jpg");
+        saved.setImgRefs2("https://sb.io/establecimientos/img2.jpg");
+
+        EstablecimientoDetailResponse response = new EstablecimientoDetailResponse();
+        response.setId(11);
+        response.setImgRefs("https://sb.io/establecimientos/img1.jpg");
+        response.setImgRefs2("https://sb.io/establecimientos/img2.jpg");
+        // imgRefs3 and imgRefs4 remain null (not set)
+
+        when(storageService.uploadFile(any(), eq("establecimientos")))
+                .thenReturn("https://sb.io/establecimientos/img1.jpg")
+                .thenReturn("https://sb.io/establecimientos/img2.jpg");
+        when(establecimientoMapper.toEntity(any())).thenReturn(new Establecimiento());
+        when(establecimientoService.create(any())).thenReturn(saved);
+        when(establecimientoMapper.toDetailDto(saved)).thenReturn(response);
+
+        MockMultipartFile foto = new MockMultipartFile("foto", "img1.jpg", "image/jpeg", new byte[]{1, 2, 3});
+        MockMultipartFile foto2 = new MockMultipartFile("foto2", "img2.jpg", "image/jpeg", new byte[]{4, 5, 6});
+        MockPart datos = new MockPart("datos", datosJson(objectMapper));
+        datos.getHeaders().setContentType(MediaType.APPLICATION_JSON);
+
+        // when & then
+        mockMvc.perform(multipart("/api/establecimientos")
+                        .file(foto)
+                        .file(foto2)
+                        .part(datos)
+                        .with(asUsuario()))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.data.imgRefs").value("https://sb.io/establecimientos/img1.jpg"))
+                .andExpect(jsonPath("$.data.imgRefs2").value("https://sb.io/establecimientos/img2.jpg"))
+                .andExpect(jsonPath("$.data.imgRefs3").doesNotExist())
+                .andExpect(jsonPath("$.data.imgRefs4").doesNotExist());
+    }
+
+    @Test
+    void create_with4Images_allPopulated() throws Exception {
+        // given
+        Establecimiento saved = new Establecimiento();
+        saved.setId(12);
+        saved.setImgRefs("https://sb.io/img1.jpg");
+        saved.setImgRefs2("https://sb.io/img2.jpg");
+        saved.setImgRefs3("https://sb.io/img3.jpg");
+        saved.setImgRefs4("https://sb.io/img4.jpg");
+
+        EstablecimientoDetailResponse response = new EstablecimientoDetailResponse();
+        response.setId(12);
+        response.setImgRefs("https://sb.io/img1.jpg");
+        response.setImgRefs2("https://sb.io/img2.jpg");
+        response.setImgRefs3("https://sb.io/img3.jpg");
+        response.setImgRefs4("https://sb.io/img4.jpg");
+
+        when(storageService.uploadFile(any(), eq("establecimientos")))
+                .thenReturn("https://sb.io/img1.jpg")
+                .thenReturn("https://sb.io/img2.jpg")
+                .thenReturn("https://sb.io/img3.jpg")
+                .thenReturn("https://sb.io/img4.jpg");
+        when(establecimientoMapper.toEntity(any())).thenReturn(new Establecimiento());
+        when(establecimientoService.create(any())).thenReturn(saved);
+        when(establecimientoMapper.toDetailDto(saved)).thenReturn(response);
+
+        MockMultipartFile foto = new MockMultipartFile("foto", "img1.jpg", "image/jpeg", new byte[]{1});
+        MockMultipartFile foto2 = new MockMultipartFile("foto2", "img2.jpg", "image/jpeg", new byte[]{2});
+        MockMultipartFile foto3 = new MockMultipartFile("foto3", "img3.jpg", "image/jpeg", new byte[]{3});
+        MockMultipartFile foto4 = new MockMultipartFile("foto4", "img4.jpg", "image/jpeg", new byte[]{4});
+        MockPart datos = new MockPart("datos", datosJson(objectMapper));
+        datos.getHeaders().setContentType(MediaType.APPLICATION_JSON);
+
+        // when & then
+        mockMvc.perform(multipart("/api/establecimientos")
+                        .file(foto)
+                        .file(foto2)
+                        .file(foto3)
+                        .file(foto4)
+                        .part(datos)
+                        .with(asUsuario()))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.data.imgRefs").value("https://sb.io/img1.jpg"))
+                .andExpect(jsonPath("$.data.imgRefs2").value("https://sb.io/img2.jpg"))
+                .andExpect(jsonPath("$.data.imgRefs3").value("https://sb.io/img3.jpg"))
+                .andExpect(jsonPath("$.data.imgRefs4").value("https://sb.io/img4.jpg"));
+    }
+
+    @Test
+    void create_missingPrimaryImage_returns400() throws Exception {
+        // No "foto" part — validarImagen(null, "foto", true) throws IllegalArgumentException → 400
+        MockPart datos = new MockPart("datos", datosJson(objectMapper));
+        datos.getHeaders().setContentType(MediaType.APPLICATION_JSON);
+
+        mockMvc.perform(multipart("/api/establecimientos")
+                        .part(datos)
+                        .with(asUsuario()))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void create_nonImageMimeType_returns400() throws Exception {
+        // "foto" with application/pdf — validarImagen throws IllegalArgumentException → 400
+        MockMultipartFile foto = new MockMultipartFile("foto", "doc.pdf", "application/pdf", new byte[]{1, 2, 3});
+        MockPart datos = new MockPart("datos", datosJson(objectMapper));
+        datos.getHeaders().setContentType(MediaType.APPLICATION_JSON);
+
+        mockMvc.perform(multipart("/api/establecimientos")
+                        .file(foto)
+                        .part(datos)
+                        .with(asUsuario()))
+                .andExpect(status().isBadRequest());
     }
 
     @Test
     void create_missingRequiredFields_returnsBadRequest() throws Exception {
         // blank nombre, null idSuscripcion, null idTipoEstablecimiento
-        mockMvc.perform(post("/api/establecimientos")
-                        .with(asUsuario())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"nombre\":\"\"}"))
+        byte[] invalidDatos = objectMapper.writeValueAsBytes(
+                objectMapper.createObjectNode().put("nombre", ""));
+
+        MockMultipartFile foto = new MockMultipartFile("foto", "img.jpg", "image/jpeg", new byte[]{1});
+        MockPart datos = new MockPart("datos", invalidDatos);
+        datos.getHeaders().setContentType(MediaType.APPLICATION_JSON);
+
+        mockMvc.perform(multipart("/api/establecimientos")
+                        .file(foto)
+                        .part(datos)
+                        .with(asUsuario()))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.fieldErrors.nombre").exists())
                 .andExpect(jsonPath("$.fieldErrors.idSuscripcion").exists())
@@ -285,7 +463,7 @@ class EstablecimientoControllerTest extends BaseControllerTest {
     }
 
     // ================================================================== //
-    //  PUT /api/establecimientos/{id}                                     //
+    //  PUT /api/establecimientos/{id}  (multipart/form-data)              //
     // ================================================================== //
 
     @Test
@@ -306,11 +484,20 @@ class EstablecimientoControllerTest extends BaseControllerTest {
         when(establecimientoService.update(eq(1), any())).thenReturn(updated);
         when(establecimientoMapper.toDetailDto(updated)).thenReturn(response);
 
+        byte[] updateDatos = objectMapper.writeValueAsBytes(
+                objectMapper.createObjectNode()
+                        .put("idSuscripcion", 1)
+                        .put("idTipoEstablecimiento", 2)
+                        .put("nombre", "Local Actualizado"));
+
+        MockPart datos = new MockPart("datos", updateDatos);
+        datos.getHeaders().setContentType(MediaType.APPLICATION_JSON);
+
         // when & then
-        mockMvc.perform(put("/api/establecimientos/1")
-                        .with(asUsuario())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"idSuscripcion\":1,\"idTipoEstablecimiento\":2,\"nombre\":\"Local Actualizado\"}"))
+        mockMvc.perform(multipart("/api/establecimientos/1")
+                        .part(datos)
+                        .with(request -> { request.setMethod("PUT"); return request; })
+                        .with(asUsuario()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.nombre").value("Local Actualizado"));
     }
@@ -323,11 +510,20 @@ class EstablecimientoControllerTest extends BaseControllerTest {
         when(establecimientoService.update(eq(999), any()))
                 .thenThrow(new ResourceNotFoundException("Establecimiento", "id", 999));
 
+        byte[] updateDatos = objectMapper.writeValueAsBytes(
+                objectMapper.createObjectNode()
+                        .put("idSuscripcion", 1)
+                        .put("idTipoEstablecimiento", 2)
+                        .put("nombre", "Test"));
+
+        MockPart datos = new MockPart("datos", updateDatos);
+        datos.getHeaders().setContentType(MediaType.APPLICATION_JSON);
+
         // when & then
-        mockMvc.perform(put("/api/establecimientos/999")
-                        .with(asUsuario())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"idSuscripcion\":1,\"idTipoEstablecimiento\":2,\"nombre\":\"Test\"}"))
+        mockMvc.perform(multipart("/api/establecimientos/999")
+                        .part(datos)
+                        .with(request -> { request.setMethod("PUT"); return request; })
+                        .with(asUsuario()))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.error").value("Not Found"));
     }
@@ -335,10 +531,19 @@ class EstablecimientoControllerTest extends BaseControllerTest {
     @Test
     void update_validationError_returnsBadRequest() throws Exception {
         // blank nombre triggers @NotBlank
-        mockMvc.perform(put("/api/establecimientos/1")
-                        .with(asUsuario())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"idSuscripcion\":1,\"idTipoEstablecimiento\":2,\"nombre\":\"\"}"))
+        byte[] invalidDatos = objectMapper.writeValueAsBytes(
+                objectMapper.createObjectNode()
+                        .put("idSuscripcion", 1)
+                        .put("idTipoEstablecimiento", 2)
+                        .put("nombre", ""));
+
+        MockPart datos = new MockPart("datos", invalidDatos);
+        datos.getHeaders().setContentType(MediaType.APPLICATION_JSON);
+
+        mockMvc.perform(multipart("/api/establecimientos/1")
+                        .part(datos)
+                        .with(request -> { request.setMethod("PUT"); return request; })
+                        .with(asUsuario()))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.fieldErrors.nombre").exists());
     }
@@ -365,5 +570,55 @@ class EstablecimientoControllerTest extends BaseControllerTest {
         mockMvc.perform(delete("/api/establecimientos/999").with(asUsuario()))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.error").value("Not Found"));
+    }
+
+    // ================================================================== //
+    //  POST/PUT /api/establecimientos — DataIntegrityViolationException (P0 #8/#9) //
+    // ================================================================== //
+
+    @Test
+    void create_serviceThrowsDataIntegrityViolation_returnsConflict() throws Exception {
+        // given — service hits a DB constraint (e.g. duplicate unique key on nombre)
+        // controller receives DataIntegrityViolationException → GlobalExceptionHandler → 409
+        when(establecimientoMapper.toEntity(any())).thenReturn(new Establecimiento());
+        when(establecimientoService.create(any()))
+                .thenThrow(new DataIntegrityViolationException("Duplicate entry 'Test Local' for key 'nombre'"));
+
+        MockMultipartFile foto = new MockMultipartFile("foto", "img.jpg", "image/jpeg", new byte[]{1});
+        MockPart datos = new MockPart("datos", datosJson(objectMapper));
+        datos.getHeaders().setContentType(MediaType.APPLICATION_JSON);
+
+        // when & then
+        mockMvc.perform(multipart("/api/establecimientos")
+                        .file(foto)
+                        .part(datos)
+                        .with(asUsuario()))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.error").value("Data Integrity Violation"));
+    }
+
+    @Test
+    void update_serviceThrowsDataIntegrityViolation_returnsConflict() throws Exception {
+        // given — service update hits a DB constraint
+        when(establecimientoMapper.toEntity(any())).thenReturn(new Establecimiento());
+        when(establecimientoService.update(eq(1), any()))
+                .thenThrow(new DataIntegrityViolationException("Duplicate entry 'Test Local' for key 'nombre'"));
+
+        byte[] updateDatos = objectMapper.writeValueAsBytes(
+                objectMapper.createObjectNode()
+                        .put("idSuscripcion", 1)
+                        .put("idTipoEstablecimiento", 2)
+                        .put("nombre", "Test Local"));
+
+        MockPart datos = new MockPart("datos", updateDatos);
+        datos.getHeaders().setContentType(MediaType.APPLICATION_JSON);
+
+        // when & then
+        mockMvc.perform(multipart("/api/establecimientos/1")
+                        .part(datos)
+                        .with(request -> { request.setMethod("PUT"); return request; })
+                        .with(asUsuario()))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.error").value("Data Integrity Violation"));
     }
 }

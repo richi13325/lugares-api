@@ -20,6 +20,9 @@ public class EstablecimientoResponse {
     private String coordLatitud;
     private String coordLongitud;
     private String imgRefs;
+    private String imgRefs2;
+    private String imgRefs3;
+    private String imgRefs4;
     private Time horarioApertura;
     private Time horarioCierre;
 }

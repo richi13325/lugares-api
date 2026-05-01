@@ -37,6 +37,9 @@ public class EstablecimientoRequest {
     private String sugerenciaDeLaCasa;
 
     private String imgRefs;
+    private String imgRefs2;
+    private String imgRefs3;
+    private String imgRefs4;
     private Time horarioApertura;
     private Time horarioCierre;
     private Boolean lunes;

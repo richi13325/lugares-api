@@ -9,6 +9,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Configuration
@@ -47,14 +48,14 @@ public class DataSeeder implements CommandLineRunner {
         Suscripcion suscCliente = new Suscripcion();
         suscCliente.setNombre("Básica Cliente");
         suscCliente.setDescripcion("Suscripción gratuita para clientes");
-        suscCliente.setPrecio(0.0);
+        suscCliente.setPrecio(BigDecimal.ZERO);
         suscCliente.setEsSuscripcionDeCliente(true);
         suscripcionRepository.save(suscCliente);
 
         Suscripcion suscEstab = new Suscripcion();
         suscEstab.setNombre("Premium Establecimiento");
         suscEstab.setDescripcion("Suscripción para establecimientos");
-        suscEstab.setPrecio(299.0);
+        suscEstab.setPrecio(BigDecimal.valueOf(299));
         suscEstab.setEsSuscripcionDeCliente(false);
         suscripcionRepository.save(suscEstab);
 

@@ -11,6 +11,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.math.BigDecimal;
+
 @Entity
 @Table(name = "p_suscripcion")
 @Getter
@@ -30,8 +32,8 @@ public class Suscripcion {
     @Column(name = "fld_descripcion")
     private String descripcion;
 
-    @Column(name = "fld_precio")
-    private Double precio;
+    @Column(name = "fld_precio", precision = 10, scale = 0, nullable = false)
+    private BigDecimal precio;
 
     @Column(name = "fld_es_suscripcion_de_cliente")
     private Boolean esSuscripcionDeCliente;

@@ -11,6 +11,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Table(name = "fcm_tokens")
 @Getter
@@ -24,7 +26,7 @@ public class FcmToken {
     @Column(name = "id_token")
     private Long id;
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false, unique = true, length = 500)
     private String token;
 
     @Column(name = "id_cliente", nullable = false)
@@ -32,4 +34,10 @@ public class FcmToken {
 
     @Column(name = "plataform", nullable = false)
     private String plataforma;
+
+    @Column(name = "activo", insertable = false, updatable = false)
+    private Boolean activo;
+
+    @Column(name = "fecha_registro", insertable = false, updatable = false)
+    private LocalDateTime fechaRegistro;
 }

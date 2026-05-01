@@ -41,31 +41,31 @@ public class Establecimiento {
     @JoinColumn(name = "fk_id_tipo_establecimiento")
     private TipoEstablecimiento tipoEstablecimiento;
 
-    @Column(name = "fld_nombre")
+    @Column(name = "fld_nombre", nullable = false)
     private String nombre;
 
-    @Column(name = "fld_descripcion")
+    @Column(name = "fld_descripcion", length = 510)
     private String descripcion;
 
-    @Column(name = "fld_estado")
+    @Column(name = "fld_estado", nullable = false)
     private String estado;
 
-    @Column(name = "fld_ciudad")
+    @Column(name = "fld_ciudad", nullable = false)
     private String ciudad;
 
     @Column(name = "fld_zona")
     private String zona;
 
-    @Column(name = "fld_direccion")
+    @Column(name = "fld_direccion", nullable = false)
     private String direccion;
 
-    @Column(name = "fld_referencia_geografica")
+    @Column(name = "fld_referencia_geografica", nullable = false)
     private String referenciaGeografica;
 
-    @Column(name = "fld_coord_latitud")
+    @Column(name = "fld_coord_latitud", nullable = false)
     private String coordLatitud;
 
-    @Column(name = "fld_coord_longitud")
+    @Column(name = "fld_coord_longitud", nullable = false)
     private String coordLongitud;
 
     @Column(name = "fld_correo_electronico")
@@ -74,8 +74,17 @@ public class Establecimiento {
     @Column(name = "fld_sugerencia_de_la_casa")
     private String sugerenciaDeLaCasa;
 
-    @Column(name = "fld_img_refs")
+    @Column(name = "fld_img_refs", columnDefinition = "TEXT")
     private String imgRefs;
+
+    @Column(name = "fld_img_refs_2", length = 500)
+    private String imgRefs2;
+
+    @Column(name = "fld_img_refs_3", length = 500)
+    private String imgRefs3;
+
+    @Column(name = "fld_img_refs_4", length = 500)
+    private String imgRefs4;
 
     @Column(name = "fld_horario_apertura")
     private Time horarioApertura;
@@ -104,7 +113,7 @@ public class Establecimiento {
     @Column(name = "fld_domingo")
     private Boolean domingo;
 
-    @Column(name = "fld_menu")
+    @Column(name = "fld_menu", columnDefinition = "TEXT")
     private String menu;
 
     @Column(name = "fld_celular_1", length = 20)
@@ -116,7 +125,7 @@ public class Establecimiento {
     @Column(name = "fld_celular_comentarios", length = 20)
     private String celularComentarios;
 
-    @Column(name = "fld_alimentos_bebidas")
+    @Column(name = "fld_alimentos_bebidas", columnDefinition = "TEXT")
     private String alimentosBebidas;
 
     @Column(name = "fld_ticket_promedio", length = 50)
@@ -125,27 +134,27 @@ public class Establecimiento {
     @Column(name = "fld_antiguedad_anios")
     private Integer antiguedadAnios;
 
-    @Column(name = "fld_promo_lunes")
+    @Column(name = "fld_promo_lunes", columnDefinition = "TEXT")
     private String promoLunes;
 
-    @Column(name = "fld_promo_martes")
+    @Column(name = "fld_promo_martes", columnDefinition = "TEXT")
     private String promoMartes;
 
-    @Column(name = "fld_promo_miercoles")
+    @Column(name = "fld_promo_miercoles", columnDefinition = "TEXT")
     private String promoMiercoles;
 
-    @Column(name = "fld_promo_jueves")
+    @Column(name = "fld_promo_jueves", columnDefinition = "TEXT")
     private String promoJueves;
 
-    @Column(name = "fld_promo_viernes")
+    @Column(name = "fld_promo_viernes", columnDefinition = "TEXT")
     private String promoViernes;
 
-    @Column(name = "fld_promo_sabado")
+    @Column(name = "fld_promo_sabado", columnDefinition = "TEXT")
     private String promoSabado;
 
-    @Column(name = "fld_promo_domingo")
+    @Column(name = "fld_promo_domingo", columnDefinition = "TEXT")
     private String promoDomingo;
 
-    @Column(name = "fld_promo_300_lugares")
+    @Column(name = "fld_promo_300_lugares", columnDefinition = "TEXT")
     private String promo300Lugares;
 }

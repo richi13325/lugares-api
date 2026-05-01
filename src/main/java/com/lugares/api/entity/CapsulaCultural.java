@@ -38,6 +38,6 @@ public class CapsulaCultural {
     @Column(name = "fld_fecha_publicacion")
     private LocalDateTime fechaPublicacion;
 
-    @Column(name = "fld_es_visible")
-    private Boolean esVisible;
+    @Column(name = "fld_es_visible", columnDefinition = "tinyint default 1", nullable = false)
+    private Boolean esVisible = true;
 }

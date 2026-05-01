@@ -32,7 +32,7 @@ public class Calificacion {
     private Cliente cliente;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "fkd_id_establecimiento")
+    @JoinColumn(name = "fk_id_establecimiento")
     private Establecimiento establecimiento;
 
     @Column(name = "fld_calificacion")

@@ -54,9 +54,17 @@
 
         <!-- Database -->
         <dependency>
-            <groupId>org.postgresql</groupId>
-            <artifactId>postgresql</artifactId>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
             <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-mysql</artifactId>
         </dependency>
 
         <!-- JWT -->
@@ -143,6 +151,24 @@
                             <artifactId>lombok</artifactId>
                         </exclude>
                     </excludes>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.flywaydb</groupId>
+                <artifactId>flyway-maven-plugin</artifactId>
+                <configuration>
+                    <!--
+                        Flyway credentials resolved via Maven properties.
+                        Run locally with overrides, e.g.:
+                          mvn flyway:migrate -Dflyway.url=jdbc:mysql://127.0.0.1:3306/lugares_dev \
+                            -Dflyway.user=appuser -Dflyway.password=<password>
+                        Or set properties in ~/.m2/settings.xml or pom.xml <properties>.
+                    -->
+                    <url>${flyway.url:jdbc:mysql://localhost:3306/lugares_dev}</url>
+                    <user>${flyway.user:appuser}</user>
+                    <password>${flyway.password:}</password>
+                    <baselineOnMigrate>true</baselineOnMigrate>
+                    <baselineVersion>1</baselineVersion>
                 </configuration>
             </plugin>
         </plugins>

@@ -3,6 +3,7 @@ package com.lugares.api.entity;
 import com.lugares.api.entity.enums.TipoPromocion;
 import jakarta.persistence.Column;
 import jakarta.persistence.CollectionTable;
+import jakarta.persistence.Lob;
 import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -50,6 +51,7 @@ public class Promocion {
     @Column(name = "fld_descripcion")
     private String descripcion;
 
+    @Lob
     @Column(name = "fld_imagen")
     private byte[] imagen;
 

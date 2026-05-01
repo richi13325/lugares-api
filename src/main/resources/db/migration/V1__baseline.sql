@@ -1,0 +1,6 @@
+-- V1: Baseline migration.
+-- This script is intentionally empty.
+-- The existing production schema (App300_Lugares MySQL DB) is adopted as-is
+-- via spring.flyway.baseline-on-migrate=true + baseline-version=1.
+-- Flyway records this version as BASELINE without executing any DDL.
+-- See: docs/mysql-migration-rules.md Rule 4 and Rule 6.

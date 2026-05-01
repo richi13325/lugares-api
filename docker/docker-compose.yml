@@ -1,0 +1,58 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Purpose : Local MySQL 8 for mysql-reconnect Wave 3 schema validation
+#           and Wave 4 smoke tests.
+#
+# Usage   : 1. Place your production mysqldump in docker/init/
+#               e.g.  cp dump_20260422_1800.sql docker/init/
+#           2. Copy docker/.env.example to docker/.env and set your secrets.
+#           3. Start:  docker compose -f docker/docker-compose.yml up -d
+#              First boot auto-imports every .sql file in docker/init/
+#              alphabetically.
+#           4. Wait ~10-30s, then verify:
+#              docker compose -f docker/docker-compose.yml logs mysql | grep "ready for connections"
+#
+# WARNING : NOT for production. Local dev only.
+# ─────────────────────────────────────────────────────────────────────────────
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: lugares-mysql-dev
+
+    # Credentials are loaded from docker/.env (NOT the project root .env).
+    # Copy docker/.env.example → docker/.env and fill in your values.
+    # Defaults in .env.example are intentionally weak (dev-only container).
+    env_file:
+      - .env
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-lugares_dev}   # DB created on first boot
+      # MYSQL_ROOT_PASSWORD, MYSQL_USER, MYSQL_PASSWORD → sourced from .env
+
+    ports:
+      # Bind to localhost only — avoids accidental LAN exposure.
+      - "127.0.0.1:3306:3306"
+
+    volumes:
+      # Named volume for data persistence across container restarts.
+      - mysql-data:/var/lib/mysql
+      # Bind: SQL files placed here are auto-imported on first container start.
+      # Place your mysqldump here before running `docker compose up -d`.
+      - ./init:/docker-entrypoint-initdb.d:ro
+
+    command:
+      - --default-authentication-plugin=mysql_native_password
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_0900_ai_ci
+
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "root", "--password=${MYSQL_ROOT_PASSWORD:-changeme}"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 30s
+
+    restart: unless-stopped
+
+# Top-level named volume declaration.
+volumes:
+  mysql-data:

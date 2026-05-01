@@ -43,10 +43,10 @@ public class Cliente implements UserDetails {
     @Column(name = "fld_nombre_corto")
     private String nombreCorto;
 
-    @Column(name = "fld_telefono", length = 10)
+    @Column(name = "fld_telefono", length = 10, unique = true)
     private String telefono;
 
-    @Column(name = "fld_correo_electronico", nullable = false)
+    @Column(name = "fld_correo_electronico", nullable = false, unique = true)
     private String correoElectronico;
 
     @Column(name = "fld_fecha_nacimiento")

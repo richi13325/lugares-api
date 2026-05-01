@@ -39,6 +39,15 @@ build/
 
 ### Environment ###
 .env
+.envVpsBak
+.env.local
+.env.*.local
+!.env.example
+
+### Docker local dev secrets and dump files ###
+docker/.env
+docker/init/*.sql
+!docker/init/.gitkeep
 
 ### Claude / ATL ###
 .claude/

@@ -1,5 +1,11 @@
 spring:
+  datasource:
+    url: ${DB_URL:jdbc:mysql://localhost:3306/lugares_dev?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true}
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:root}
   jpa:
+    hibernate:
+      ddl-auto: update
     properties:
       hibernate:
         format_sql: true
